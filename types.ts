@@ -171,4 +171,14 @@ export interface ProjectEmail {
   createdAt?: string;
 }
 
+export interface WebTable {
+  webTableId: number;
+  tableName: string;
+  desktopTableName?: string;
+  moduleName?: string;
+  groupIndex?: number;
+  description?: string;
+  createdAt?: string;
+}
+
 export type EmailCategory = 'Approval' | 'Clarification' | 'Issue' | 'Completion' | 'Rejection' | 'Follow-up' | 'General';

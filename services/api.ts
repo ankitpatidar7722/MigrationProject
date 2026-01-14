@@ -8,7 +8,8 @@ import {
   MigrationIssue,
   CustomizationPoint,
   ModuleMaster,
-  ProjectEmail
+  ProjectEmail,
+  WebTable
 } from '../types';
 
 /**
@@ -333,6 +334,33 @@ export const api = {
       const response = await fetch(`${BASE_URL}/ModuleMaster`);
       return handleResponse<ModuleMaster[]>(response);
     },
+
+    create: async (data: ModuleMaster): Promise<ModuleMaster> => {
+      const response = await fetch(`${BASE_URL}/ModuleMaster`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return handleResponse<ModuleMaster>(response);
+    },
+
+    update: async (id: number, data: ModuleMaster): Promise<ModuleMaster> => {
+      const response = await fetch(`${BASE_URL}/ModuleMaster/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      // Handle 204 No Content
+      if (response && (response as any).status === 204) return data;
+      return handleResponse<ModuleMaster>(response);
+    },
+
+    delete: async (id: number): Promise<void> => {
+      const response = await fetch(`${BASE_URL}/ModuleMaster/${id}`, {
+        method: 'DELETE'
+      });
+      return handleResponse<void>(response);
+    },
   },
 
   // ==================== PROJECT EMAILS ====================
@@ -372,6 +400,39 @@ export const api = {
     delete: async (id: number): Promise<void> => {
       const response = await fetch(`${BASE_URL}/Emails/${id}`, {
         method: 'DELETE',
+      });
+      return handleResponse<void>(response);
+    },
+  },
+
+  // ==================== WEB TABLES ====================
+  webTables: {
+    getAll: async (): Promise<WebTable[]> => {
+      const response = await fetch(`${BASE_URL}/WebTables`);
+      return handleResponse<WebTable[]>(response);
+    },
+
+    create: async (data: WebTable): Promise<WebTable> => {
+      const response = await fetch(`${BASE_URL}/WebTables`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return handleResponse<WebTable>(response);
+    },
+
+    update: async (id: number, data: WebTable): Promise<WebTable> => {
+      const response = await fetch(`${BASE_URL}/WebTables/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return handleResponse<WebTable>(response);
+    },
+
+    delete: async (id: number): Promise<void> => {
+      const response = await fetch(`${BASE_URL}/WebTables/${id}`, {
+        method: 'DELETE'
       });
       return handleResponse<void>(response);
     },

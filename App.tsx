@@ -21,13 +21,16 @@ import {
   FileText,
   ShoppingBag,
   Folder,
-  Mail
+  Mail,
+  Table
 } from 'lucide-react';
 
 import Dashboard from './pages/Dashboard';
 import ProjectList from './pages/ProjectList';
 import ProjectDetail from './pages/ProjectDetail';
 import DynamicModulePage from './pages/DynamicModulePage';
+import ModuleMasterManager from './pages/ModuleMasterManager';
+import WebTableManager from './pages/WebTableManager';
 import FieldManager from './pages/FieldManager';
 import Login from './pages/Login';
 import TransferChecks from './pages/TransferChecks';
@@ -77,10 +80,10 @@ const App: React.FC = () => {
             <Route path="/projects/:projectId/transfer" element={<TransferChecks />} />
             <Route path="/projects/:projectId/verification" element={<VerificationList />} />
             <Route path="/projects/:projectId/issues" element={<MigrationIssues />} />
-            <Route path="/projects/:projectId/customization" element={<CustomizationPoints />} />
             <Route path="/projects/:projectId/emails" element={<EmailDocumentation />} />
-
             <Route path="/admin/fields" element={<FieldManager />} />
+            <Route path="/admin/modules" element={<ModuleMasterManager />} />
+            <Route path="/admin/webtables" element={<WebTableManager />} />
             <Route path="/projects/:projectId/module/:moduleName" element={<DynamicModulePage />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
@@ -205,6 +208,14 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <Link to="/admin/fields" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${location.pathname === '/admin/fields' ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
             <Settings size={20} />
             <span className="text-[10px] mt-1 font-medium">Fields</span>
+          </Link>
+          <Link to="/admin/modules" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${location.pathname === '/admin/modules' ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+            <Database size={20} />
+            <span className="text-[10px] mt-1 font-medium">Modules</span>
+          </Link>
+          <Link to="/admin/webtables" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${location.pathname === '/admin/webtables' ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+            <Table size={20} />
+            <span className="text-[10px] mt-1 font-medium">Tables</span>
           </Link>
 
           {/* Project Specific Modules */}

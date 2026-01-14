@@ -27,6 +27,7 @@ public class MigraTrackDbContext : DbContext
     public DbSet<MigrationIssue> MigrationIssues { get; set; }
     public DbSet<CustomizationPoint> CustomizationPoints { get; set; }
     public DbSet<ProjectEmail> ProjectEmails { get; set; }
+    public DbSet<WebTable> WebTables { get; set; }
     
     // Supporting Tables
     public DbSet<Comment> Comments { get; set; }
