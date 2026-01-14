@@ -68,4 +68,21 @@ public class ProjectsController : ControllerBase
         var stats = await _projectService.GetProjectDashboardAsync(id);
         return Ok(stats);
     }
+
+    [HttpPost("{sourceId}/clone/{targetId}")]
+    public async Task<IActionResult> CloneProject(long sourceId, long targetId)
+    {
+        try 
+        {
+            var success = await _projectService.CloneProjectDataAsync(sourceId, targetId);
+            if (!success)
+                return BadRequest("Clone failed. Ensure both projects exist.");
+
+            return Ok(new { message = "Project data cloned successfully." });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, $"Internal server error: {ex.Message}");
+        }
+    }
 }

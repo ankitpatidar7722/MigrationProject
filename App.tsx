@@ -20,7 +20,8 @@ import {
   Calculator,
   FileText,
   ShoppingBag,
-  Folder
+  Folder,
+  Mail
 } from 'lucide-react';
 
 import Dashboard from './pages/Dashboard';
@@ -33,6 +34,7 @@ import TransferChecks from './pages/TransferChecks';
 import VerificationList from './pages/VerificationList';
 import MigrationIssues from './pages/MigrationIssues';
 import CustomizationPoints from './pages/CustomizationPoints';
+import EmailDocumentation from './pages/EmailDocumentation';
 import { api } from './services/api';
 import { ModuleMaster } from './types';
 
@@ -68,6 +70,7 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/projects" element={<ProjectList />} />
+            <Route path="/emails" element={<EmailDocumentation />} />
             <Route path="/projects/:projectId" element={<ProjectDetail />} />
 
             {/* Module Pages */}
@@ -75,6 +78,7 @@ const App: React.FC = () => {
             <Route path="/projects/:projectId/verification" element={<VerificationList />} />
             <Route path="/projects/:projectId/issues" element={<MigrationIssues />} />
             <Route path="/projects/:projectId/customization" element={<CustomizationPoints />} />
+            <Route path="/projects/:projectId/emails" element={<EmailDocumentation />} />
 
             <Route path="/admin/fields" element={<FieldManager />} />
 
@@ -113,6 +117,7 @@ const Breadcrumb: React.FC = () => {
       'verification': 'Verification List',
       'issues': 'Migration Issues',
       'customization': 'Customization Points',
+      'emails': 'Email Documentation',
       'projects': 'Projects'
     };
     return nameMap[page] || page.replace('-', ' ');
@@ -175,66 +180,58 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <div className="flex h-screen overflow-hidden bg-[#f0f2f5] dark:bg-[#050505]">
       {/* Sidebar - specific Navy Blue theme requested */}
-      <aside className={`fixed inset-y-0 left-0 z-50 w-16 bg-[#0f294d] text-white transition-all duration-300 ease-in-out flex flex-col shadow-xl`}>
+      <aside className={`fixed inset-y-0 left-0 z-50 w-20 bg-[#0f294d] text-white transition-all duration-300 ease-in-out flex flex-col shadow-xl`}>
         <div className="h-16 flex items-center justify-center border-b border-white/10 shrink-0">
           <div className="w-8 h-8 rounded bg-blue-500 flex items-center justify-center font-bold text-white transition-transform hover:scale-110 cursor-pointer" title="MigraTrack">
             M
           </div>
         </div>
 
-        <nav className="flex-1 overflow-y-auto py-4 space-y-4 notion-scrollbar flex flex-col items-center">
+        <nav className="flex-1 overflow-y-auto py-4 space-y-2 notion-scrollbar flex flex-col items-center">
           {/* Global Nav */}
-          <Link to="/" className={`relative flex items-center justify-center w-10 h-10 rounded-lg transition-colors group/item ${isActive('/') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+          <Link to="/" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive('/') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
             <LayoutDashboard size={20} />
-            <div className="absolute left-full ml-4 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover/item:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-lg top-1/2 -translate-y-1/2">
-              Dashboard
-            </div>
+            <span className="text-[10px] mt-1 font-medium">Dashboard</span>
           </Link>
-          <Link to="/projects" className={`relative flex items-center justify-center w-10 h-10 rounded-lg transition-colors group/item ${location.pathname === '/projects' ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+          <Link to="/projects" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${location.pathname === '/projects' ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
             <Users size={20} />
-            <div className="absolute left-full ml-4 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover/item:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-lg top-1/2 -translate-y-1/2">
-              Clients
-            </div>
+            <span className="text-[10px] mt-1 font-medium">Projects</span>
+          </Link>
+          <Link to="/emails" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${location.pathname === '/emails' ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+            <Mail size={20} />
+            <span className="text-[10px] mt-1 font-medium">Email</span>
           </Link>
 
           {/* Project Specific Modules */}
           {projectId && Object.keys(moduleGroups).length > 0 && (
             <>
               {/* Project Tools */}
-              <div className="w-8 border-t border-white/10 my-1" />
-              <Link to={`/projects/${projectId}/customization`} className={`relative flex items-center justify-center w-10 h-10 rounded-lg transition-colors group/item ${isActive(`/projects/${projectId}/customization`) ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+              <div className="w-12 border-t border-white/10 my-1" />
+              <Link to={`/projects/${projectId}/customization`} className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive(`/projects/${projectId}/customization`) ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
                 <Plus size={20} />
-                <div className="absolute left-full ml-4 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover/item:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-lg top-1/2 -translate-y-1/2">
-                  Customization
-                </div>
+                <span className="text-[10px] mt-1 font-medium">Custom</span>
               </Link>
-              <Link to={`/projects/${projectId}/issues`} className={`relative flex items-center justify-center w-10 h-10 rounded-lg transition-colors group/item ${isActive(`/projects/${projectId}/issues`) ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+              <Link to={`/projects/${projectId}/issues`} className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive(`/projects/${projectId}/issues`) ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
                 <AlertTriangle size={20} />
-                <div className="absolute left-full ml-4 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover/item:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-lg top-1/2 -translate-y-1/2">
-                  Issues
-                </div>
+                <span className="text-[10px] mt-1 font-medium">Issues</span>
               </Link>
             </>
           )}
         </nav>
 
         <div className="p-4 border-t border-white/10 bg-[#0a1d36] flex flex-col items-center gap-2">
-          <button onClick={toggleTheme} className="flex items-center justify-center w-10 h-10 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors group/item relative">
+          <button onClick={toggleTheme} className="flex flex-col items-center justify-center w-16 py-2 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors group/item">
             {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-            <div className="absolute left-full ml-4 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover/item:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-lg top-1/2 -translate-y-1/2">
-              Toggle Theme
-            </div>
+            <span className="text-[10px] mt-1 font-medium">Mode</span>
           </button>
-          <button onClick={handleLogout} className="flex items-center justify-center w-10 h-10 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors group/item relative">
+          <button onClick={handleLogout} className="flex flex-col items-center justify-center w-16 py-2 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-900/20 transition-colors group/item">
             <LogOut size={20} />
-            <div className="absolute left-full ml-4 px-2 py-1 bg-slate-900 text-white text-xs rounded opacity-0 group-hover/item:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-50 shadow-lg top-1/2 -translate-y-1/2">
-              Logout
-            </div>
+            <span className="text-[10px] mt-1 font-medium">Logout</span>
           </button>
         </div>
       </aside>
 
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden ml-16">
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden ml-20">
         <header className="h-14 flex items-center justify-between px-6 bg-[#0f294d] text-white shadow-md z-40 sticky top-0">
           <div className="flex items-center gap-4">
             {/* Mobile Menu Trigger would go here */}

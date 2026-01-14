@@ -225,6 +225,7 @@ const VerificationList: React.FC = () => {
                 <div className="flex items-center gap-2 shrink-0">
                   <button onClick={() => {
                     setEditingItem(item);
+                    setSelectedModule(item.moduleName);
                     setSelectedStatus(item.status);
                     setShowModal(true);
                   }} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">

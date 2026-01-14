@@ -26,6 +26,7 @@ public class MigraTrackDbContext : DbContext
     public DbSet<VerificationRecord> VerificationRecords { get; set; }
     public DbSet<MigrationIssue> MigrationIssues { get; set; }
     public DbSet<CustomizationPoint> CustomizationPoints { get; set; }
+    public DbSet<ProjectEmail> ProjectEmails { get; set; }
     
     // Supporting Tables
     public DbSet<Comment> Comments { get; set; }
@@ -50,6 +51,7 @@ public class MigraTrackDbContext : DbContext
         modelBuilder.Entity<VerificationRecord>().ToTable("VerificationRecords");
         modelBuilder.Entity<MigrationIssue>().ToTable("MigrationIssues");
         modelBuilder.Entity<CustomizationPoint>().ToTable("CustomizationPoints");
+        modelBuilder.Entity<ProjectEmail>().ToTable("ProjectEmails");
         modelBuilder.Entity<Comment>().ToTable("Comments");
         modelBuilder.Entity<Attachment>().ToTable("Attachments");
         modelBuilder.Entity<ActivityLog>().ToTable("ActivityLog");
@@ -83,6 +85,12 @@ public class MigraTrackDbContext : DbContext
             .HasOne<Project>()
             .WithMany()
             .HasForeignKey(c => c.ProjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<ProjectEmail>()
+            .HasOne<Project>()
+            .WithMany()
+            .HasForeignKey(e => e.ProjectId)
             .OnDelete(DeleteBehavior.Cascade);
     }
 }

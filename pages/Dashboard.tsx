@@ -11,6 +11,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { storageService } from '../services/storageService';
+import { api } from '../services/api';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { Project, DataTransferCheck, MigrationIssue } from '../types';
@@ -21,6 +22,7 @@ const Dashboard: React.FC = () => {
   const [allIssues, setAllIssues] = useState<MigrationIssue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [projectStats, setProjectStats] = useState<Record<number, any>>({});
 
   useEffect(() => {
     const fetchData = async () => {
@@ -29,7 +31,7 @@ const Dashboard: React.FC = () => {
         setError(null);
 
         const [projectsData, transfersData, issuesData] = await Promise.all([
-          storageService.getProjects(),
+          api.projects.getAll(),
           storageService.getAllTransferChecks(),
           storageService.getAllIssues()
         ]);
@@ -37,6 +39,19 @@ const Dashboard: React.FC = () => {
         setProjects(projectsData);
         setAllTransfers(transfersData);
         setAllIssues(issuesData);
+
+        // Fetch stats for all projects
+        const statsMap: Record<number, any> = {};
+        await Promise.all(projectsData.map(async (p) => {
+          try {
+            const s = await api.projects.getDashboard(p.projectId);
+            statsMap[p.projectId] = s;
+          } catch (e) {
+            console.error(`Failed to load stats for project ${p.projectId}`, e);
+          }
+        }));
+        setProjectStats(statsMap);
+
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('Failed to load dashboard data. Please check your backend connection.');
@@ -49,17 +64,31 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const stats = useMemo(() => {
-    const completed = allTransfers.filter(t => t.status === 'Completed').length;
-    const pending = allTransfers.filter(t => t.status === 'Pending').length;
-    const openIssues = allIssues.filter(i => i.status !== 'Closed').length;
+    let completedCount = 0;
+    let pendingCount = 0;
+
+    projects.forEach(p => {
+      const s = projectStats[p.projectId];
+      if (s) {
+        const isCompleted = s.transferProgress === 100 && s.verificationProgress === 100;
+        if (isCompleted) {
+          completedCount++;
+        } else {
+          pendingCount++;
+        }
+      } else {
+        // Default to pending if stats missing
+        pendingCount++;
+      }
+    });
 
     return [
       { label: 'Total Projects', value: projects.length, icon: <Users size={24} />, color: 'blue' },
-      { label: 'Completed Migrations', value: completed, icon: <CheckCircle2 size={24} />, color: 'green' },
-      { label: 'Pending Transfers', value: pending, icon: <Clock size={24} />, color: 'orange' },
-      { label: 'Open Issues', value: openIssues, icon: <AlertCircle size={24} />, color: 'red' },
+      { label: 'Completed Migrations', value: completedCount, icon: <CheckCircle2 size={24} />, color: 'green' },
+      { label: 'Pending Transfers', value: pendingCount, icon: <Clock size={24} />, color: 'orange' },
+      // Open Issues card removed as requested
     ];
-  }, [projects, allTransfers, allIssues]);
+  }, [projects, projectStats]);
 
   const chartData = projects.map(p => {
     const pTransfers = allTransfers.filter(t => t.projectId === p.projectId);

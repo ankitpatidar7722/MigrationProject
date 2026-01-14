@@ -48,10 +48,10 @@ const MigrationIssues: React.FC = () => {
     }
   }, [editingIssue]);
 
-  const uniqueModules = Array.from(new Set(moduleMasters.map(m => m.moduleName)));
+  const uniqueModules = Array.from(new Set(moduleMasters.map(m => m.moduleName.trim())));
   const availableSubModules = moduleMasters
-    .filter(m => m.moduleName === selectedModule)
-    .map(m => m.subModuleName);
+    .filter(m => m.moduleName.trim() === selectedModule)
+    .map(m => m.subModuleName.trim());
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,9 +61,14 @@ const MigrationIssues: React.FC = () => {
       const formData = new FormData(form);
 
       const count = issues.length + 1;
+      // Use timestamp component to avoid collisions
+      const uniqueSuffix = Date.now().toString().slice(-6);
+      const generatedId = editingIssue?.issueId || `ISS-${projectId}-${uniqueSuffix}`;
       const issueData: MigrationIssue = {
-        issueId: editingIssue?.issueId || `ISS-${count.toString().padStart(4, '0')}`,
+        issueId: generatedId,
+        issueNumber: editingIssue?.issueNumber || generatedId,
         projectId: projectId,
+        title: formData.get('title') as string,
         moduleName: formData.get('moduleName') as string,
         subModuleName: formData.get('subModuleName') as string,
         description: formData.get('description') as string,
@@ -103,9 +108,13 @@ const MigrationIssues: React.FC = () => {
       const formData = new FormData(form);
 
       const count = issues.length + 1;
+      const uniqueSuffix = Date.now().toString().slice(-6);
+      const generatedId = `ISS-${projectId}-${uniqueSuffix}`;
       const newIssue: MigrationIssue = {
-        issueId: `ISS-${count.toString().padStart(4, '0')}`,
+        issueId: generatedId,
+        issueNumber: generatedId,
         projectId: projectId,
+        title: formData.get('title') as string,
         moduleName: formData.get('moduleName') as string,
         subModuleName: formData.get('subModuleName') as string,
         description: formData.get('description') as string,
@@ -228,13 +237,18 @@ const MigrationIssues: React.FC = () => {
                     <div className="text-[10px] text-slate-400">{issue.subModuleName}</div>
                   </td>
                   <td className="px-6 py-4">
-                    <p className="text-sm text-slate-600 dark:text-zinc-400 line-clamp-2 max-w-xs">{issue.description}</p>
+                    <div className="text-sm font-bold truncate max-w-xs">{issue.title}</div>
+                    <p className="text-xs text-slate-600 dark:text-zinc-400 line-clamp-2 max-w-xs">{issue.description}</p>
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-xs text-slate-400">{new Date(issue.reportedDate).toLocaleDateString()}</span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button onClick={() => { setEditingIssue(issue); setShowModal(true); }} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                    <button onClick={() => {
+                      setEditingIssue(issue);
+                      setSelectedModule(issue.moduleName);
+                      setShowModal(true);
+                    }} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
                       <MoreVertical size={16} />
                     </button>
                   </td>
@@ -294,6 +308,10 @@ const MigrationIssues: React.FC = () => {
                     ))}
                   </select>
                 </div>
+              </div>
+              <div>
+                <label className="block text-sm font-semibold mb-1.5">Title</label>
+                <input name="title" defaultValue={editingIssue?.title} required className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none" placeholder="Brief issue title" />
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-1.5">Issue Description</label>

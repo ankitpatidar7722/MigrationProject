@@ -7,7 +7,8 @@ import {
   VerificationRecord,
   MigrationIssue,
   CustomizationPoint,
-  ModuleMaster
+  ModuleMaster,
+  ProjectEmail
 } from '../types';
 
 /**
@@ -72,6 +73,13 @@ export const api = {
     getDashboard: async (id: number): Promise<any> => {
       const response = await fetch(`${BASE_URL}/Projects/${id}/dashboard`);
       return handleResponse<any>(response);
+    },
+
+    clone: async (sourceId: number, targetId: number): Promise<void> => {
+      const response = await fetch(`${BASE_URL}/Projects/${sourceId}/clone/${targetId}`, {
+        method: 'POST'
+      });
+      return handleResponse<void>(response);
     },
   },
 
@@ -319,6 +327,48 @@ export const api = {
     getAll: async (): Promise<ModuleMaster[]> => {
       const response = await fetch(`${BASE_URL}/ModuleMaster`);
       return handleResponse<ModuleMaster[]>(response);
+    },
+  },
+
+  // ==================== PROJECT EMAILS ====================
+  emails: {
+    getAll: async (): Promise<ProjectEmail[]> => {
+      const response = await fetch(`${BASE_URL}/Emails`);
+      return handleResponse<ProjectEmail[]>(response);
+    },
+
+    getByProject: async (projectId: number): Promise<ProjectEmail[]> => {
+      const response = await fetch(`${BASE_URL}/Emails/project/${projectId}`);
+      return handleResponse<ProjectEmail[]>(response);
+    },
+
+    getById: async (id: number): Promise<ProjectEmail> => {
+      const response = await fetch(`${BASE_URL}/Emails/${id}`);
+      return handleResponse<ProjectEmail>(response);
+    },
+
+    create: async (data: FormData): Promise<ProjectEmail> => {
+      const response = await fetch(`${BASE_URL}/Emails`, {
+        method: 'POST',
+        body: data,
+      });
+      return handleResponse<ProjectEmail>(response);
+    },
+
+    update: async (id: number, data: ProjectEmail): Promise<ProjectEmail> => {
+      const response = await fetch(`${BASE_URL}/Emails/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+      return handleResponse<ProjectEmail>(response);
+    },
+
+    delete: async (id: number): Promise<void> => {
+      const response = await fetch(`${BASE_URL}/Emails/${id}`, {
+        method: 'DELETE',
+      });
+      return handleResponse<void>(response);
     },
   },
 };

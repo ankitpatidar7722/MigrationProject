@@ -23,6 +23,7 @@ builder.Services.AddScoped<IDataTransferService, DataTransferService>();
 builder.Services.AddScoped<IVerificationService, VerificationService>();
 builder.Services.AddScoped<IIssueService, IssueService>();
 builder.Services.AddScoped<ICustomizationService, CustomizationService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
 // Configure CORS to allow frontend access
 builder.Services.AddCors(options =>
@@ -47,6 +48,7 @@ if (app.Environment.IsDevelopment())
 
 // app.UseHttpsRedirection(); // Commented out for development - frontend uses HTTP
 app.UseCors("AllowFrontend");
+app.UseStaticFiles(); // Enable static files for uploads
 app.UseAuthorization();
 app.MapControllers();
 

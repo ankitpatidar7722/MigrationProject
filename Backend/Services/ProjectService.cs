@@ -13,6 +13,7 @@ public interface IProjectService
     Task<Project?> UpdateProjectAsync(Project project);
     Task<bool> DeleteProjectAsync(long id);
     Task<object> GetProjectDashboardAsync(long projectId);
+    Task<bool> CloneProjectDataAsync(long sourceProjectId, long targetProjectId);
 }
 
 public class ProjectService : IProjectService
@@ -118,6 +119,94 @@ public class ProjectService : IProjectService
                 ? Math.Round((double)completedVerifications / totalVerifications * 100, 2) 
                 : 0
         };
+    }
+
+    public async Task<bool> CloneProjectDataAsync(long sourceProjectId, long targetProjectId)
+    {
+        var sourceProject = await _context.Projects.FindAsync(sourceProjectId);
+        var targetProject = await _context.Projects.FindAsync(targetProjectId);
+
+        if (sourceProject == null || targetProject == null)
+            return false;
+
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            // 1. Clone DataTransferChecks
+            var checks = await _context.DataTransferChecks
+                .Where(x => x.ProjectId == sourceProjectId)
+                .AsNoTracking()
+                .ToListAsync();
+            
+            foreach (var check in checks)
+            {
+                check.TransferId = 0; // Reset ID for new insertion
+                check.ProjectId = targetProjectId;
+                check.CreatedAt = DateTime.Now;
+                check.UpdatedAt = DateTime.Now;
+                _context.DataTransferChecks.Add(check);
+            }
+
+            // 2. Clone VerificationRecords
+            var verifications = await _context.VerificationRecords
+                .Where(x => x.ProjectId == sourceProjectId)
+                .AsNoTracking()
+                .ToListAsync();
+
+            foreach (var ver in verifications)
+            {
+                ver.VerificationId = 0;
+                ver.ProjectId = targetProjectId;
+                ver.CreatedAt = DateTime.Now;
+                ver.UpdatedAt = DateTime.Now;
+                _context.VerificationRecords.Add(ver);
+            }
+
+            // 3. Clone CustomizationPoints
+            var customizations = await _context.CustomizationPoints
+                .Where(x => x.ProjectId == sourceProjectId)
+                .AsNoTracking()
+                .ToListAsync();
+
+            foreach (var cust in customizations)
+            {
+                cust.CustomizationId = 0;
+                cust.ProjectId = targetProjectId;
+                cust.CreatedAt = DateTime.Now;
+                cust.UpdatedAt = DateTime.Now;
+                _context.CustomizationPoints.Add(cust);
+            }
+
+            // 4. Clone MigrationIssues
+            var issues = await _context.MigrationIssues
+                .Where(x => x.ProjectId == sourceProjectId)
+                .AsNoTracking()
+                .ToListAsync();
+
+            var timestamp = DateTime.Now.ToString("HHmmss");
+            var idx = 0;
+            foreach (var issue in issues)
+            {
+                idx++;
+                var newId = $"ISS-{targetProjectId}-{timestamp}-{idx:D3}";
+                issue.IssueId = newId;
+                issue.IssueNumber = newId;
+                issue.ProjectId = targetProjectId;
+                issue.CreatedAt = DateTime.Now;
+                issue.UpdatedAt = DateTime.Now;
+                _context.MigrationIssues.Add(issue);
+            }
+
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return true;
+        }
+        catch (Exception ex)
+        {
+            await transaction.RollbackAsync();
+            // Log exception here conceptually
+            throw; 
+        }
     }
 }
 

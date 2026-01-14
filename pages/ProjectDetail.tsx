@@ -14,9 +14,11 @@ import {
   Loader2,
   Edit2,
   Check,
-  X
+  X,
+  Copy
 } from 'lucide-react';
 import { Project, DataTransferCheck, VerificationRecord, MigrationIssue, CustomizationPoint } from '../types';
+import { api } from '../services/api';
 
 const ProjectDetail: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
@@ -34,6 +36,12 @@ const ProjectDetail: React.FC = () => {
   const [isEditingName, setIsEditingName] = useState(false);
   const [tempName, setTempName] = useState('');
   const [savingName, setSavingName] = useState(false);
+
+  // Clone state
+  const [showCloneModal, setShowCloneModal] = useState(false);
+  const [targetProject, setTargetProject] = useState<string>('');
+  const [allProjects, setAllProjects] = useState<Project[]>([]);
+  const [cloning, setCloning] = useState(false);
 
   useEffect(() => {
     if (!projectId) {
@@ -210,6 +218,21 @@ const ProjectDetail: React.FC = () => {
             <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
               <TrendingUp size={20} />
             </button>
+            <button
+              onClick={async () => {
+                try {
+                  const all = await storageService.getProjects();
+                  setAllProjects(all.filter(p => p.projectId !== projectId));
+                  setShowCloneModal(true);
+                } catch (e) {
+                  console.error(e);
+                }
+              }}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
+            >
+              <Copy size={16} />
+              Clone Data to...
+            </button>
           </div>
         </div>
       </div>
@@ -263,6 +286,66 @@ const ProjectDetail: React.FC = () => {
           </Link>
         ))}
       </div>
+
+      {/* Clone Modal */}
+      {showCloneModal && (
+        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden p-6 animate-in fade-in zoom-in duration-200">
+            <h2 className="text-xl font-bold mb-4">Clone Project Data</h2>
+            <p className="text-slate-500 dark:text-zinc-400 mb-6 text-sm">
+              Copy all data (Transfer Checks, Issues, Consultations, Verifications) from <span className="font-bold text-slate-900 dark:text-white">{project.clientName}</span> to another project.
+            </p>
+
+            <div className="mb-6">
+              <label className="block text-sm font-semibold mb-2">Target Project</label>
+              <select
+                className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
+                value={targetProject}
+                onChange={(e) => setTargetProject(e.target.value)}
+              >
+                <option value="">Select Target Project...</option>
+                {allProjects.map(p => (
+                  <option key={p.projectId} value={p.projectId}>{p.clientName}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="p-4 bg-amber-50 text-amber-800 rounded-xl mb-6 text-xs flex gap-3">
+              <AlertTriangle className="shrink-0" size={16} />
+              <p>Warning: This will add data to the target project. It does not verify for existing duplicates automatically.</p>
+            </div>
+
+            <div className="flex gap-3">
+              <button
+                onClick={() => { setShowCloneModal(false); setTargetProject(''); }}
+                className="flex-1 py-2.5 bg-slate-100 dark:bg-zinc-800 rounded-xl font-bold text-sm"
+              >
+                Cancel
+              </button>
+              <button
+                disabled={!targetProject || cloning}
+                onClick={async () => {
+                  setCloning(true);
+                  try {
+                    await api.projects.clone(projectId, parseInt(targetProject));
+                    alert('Project data cloned successfully!');
+                    setShowCloneModal(false);
+                    setTargetProject('');
+                  } catch (err) {
+                    console.error('Clone failed:', err);
+                    alert('Failed to clone data. Please try again.');
+                  } finally {
+                    setCloning(false);
+                  }
+                }}
+                className="flex-1 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold text-sm shadow-lg shadow-indigo-500/20 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {cloning ? 'Cloning...' : 'Clone Data'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

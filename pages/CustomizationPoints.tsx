@@ -200,7 +200,11 @@ const CustomizationPoints: React.FC = () => {
                     <DollarSign size={14} />
                   </div>
                 )}
-                <button onClick={() => { setEditingItem(item); setShowModal(true); }} className="p-1 text-slate-400 hover:text-amber-600 transition-colors">
+                <button onClick={() => {
+                  setEditingItem(item);
+                  setSelectedModule(item.moduleName);
+                  setShowModal(true);
+                }} className="p-1 text-slate-400 hover:text-amber-600 transition-colors">
                   <Edit3 size={16} />
                 </button>
               </div>

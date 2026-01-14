@@ -86,8 +86,10 @@ export interface VerificationRecord {
 }
 
 export interface MigrationIssue {
-  issueId: string;  // Already correct - removed duplicate 'id'
+  issueId: string;
+  issueNumber: string;
   projectId: number;
+  title: string;
   moduleName: string;
   subModuleName: string;
   description: string;
@@ -128,3 +130,19 @@ export interface ModuleMaster {
   groupIndex?: number;
 }
 
+
+export interface ProjectEmail {
+  emailId: number;
+  projectId: number;
+  subject: string;
+  sender: string;
+  receivers: string;
+  emailDate: string;
+  bodyContent: string;
+  category: EmailCategory;
+  attachmentPath?: string;
+  relatedModule?: string;
+  createdAt?: string;
+}
+
+export type EmailCategory = 'Approval' | 'Clarification' | 'Issue' | 'Completion' | 'Rejection' | 'Follow-up' | 'General';
