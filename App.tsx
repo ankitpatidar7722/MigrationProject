@@ -81,6 +81,7 @@ const App: React.FC = () => {
             <Route path="/projects/:projectId/emails" element={<EmailDocumentation />} />
 
             <Route path="/admin/fields" element={<FieldManager />} />
+            <Route path="/projects/:projectId/module/:moduleName" element={<DynamicModulePage />} />
 
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
@@ -200,6 +201,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <Link to="/emails" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${location.pathname === '/emails' ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
             <Mail size={20} />
             <span className="text-[10px] mt-1 font-medium">Email</span>
+          </Link>
+          <Link to="/admin/fields" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${location.pathname === '/admin/fields' ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+            <Settings size={20} />
+            <span className="text-[10px] mt-1 font-medium">Fields</span>
           </Link>
 
           {/* Project Specific Modules */}

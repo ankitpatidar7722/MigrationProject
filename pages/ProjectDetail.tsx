@@ -15,7 +15,8 @@ import {
   Edit2,
   Check,
   X,
-  Copy
+  Copy,
+  ArrowLeft
 } from 'lucide-react';
 import { Project, DataTransferCheck, VerificationRecord, MigrationIssue, CustomizationPoint } from '../types';
 import { api } from '../services/api';
@@ -162,6 +163,13 @@ const ProjectDetail: React.FC = () => {
 
   return (
     <div className="space-y-8 max-w-6xl mx-auto">
+      <Link
+        to="/projects"
+        className="inline-flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors mb-2"
+      >
+        <ArrowLeft size={20} />
+        <span className="font-medium">Back to Projects</span>
+      </Link>
       <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-sm">
         <div className="flex flex-col md:flex-row md:items-center gap-6">
           <div className="w-16 h-16 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold text-3xl shadow-xl shadow-blue-500/20">

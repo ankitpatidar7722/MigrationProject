@@ -18,6 +18,9 @@ public class DataTransferCheck
     [MaxLength(200)]
     public string? SubModuleName { get; set; }
 
+    [MaxLength(500)]
+    public string? Condition { get; set; }
+
     [Required]
     [MaxLength(200)]
     public string TableNameDesktop { get; set; } = string.Empty;

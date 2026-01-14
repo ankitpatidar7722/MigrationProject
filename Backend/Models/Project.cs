@@ -31,6 +31,8 @@ public class Project
 
     public DateTime? ActualCompletionDate { get; set; }
 
+    public DateTime? LiveDate { get; set; }
+
     [MaxLength(200)]
     public string? ProjectManager { get; set; }
 
@@ -39,6 +41,12 @@ public class Project
 
     [Column(TypeName = "decimal(18,2)")]
     public decimal? Budget { get; set; }
+
+    [MaxLength(200)]
+    public string? ImplementationCoordinator { get; set; }
+
+    [MaxLength(200)]
+    public string? CoordinatorEmail { get; set; }
 
     public bool IsActive { get; set; } = true;
 

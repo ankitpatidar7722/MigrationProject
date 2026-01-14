@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { DataTransferCheck, Status, ModuleMaster } from '../types';
-import { Plus, Search, Filter, Trash2, Edit3, Download, Check, Loader2 } from 'lucide-react';
+import { Plus, Search, Filter, Trash2, Edit3, Download, Check, Loader2, ArrowLeft } from 'lucide-react';
 
 const TransferChecks: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
@@ -67,6 +67,7 @@ const TransferChecks: React.FC = () => {
         projectId: projectId,
         moduleName: formData.get('moduleName') as string,
         subModuleName: formData.get('subModuleName') as string,
+        condition: formData.get('condition') as string,
         tableNameDesktop: formData.get('tableNameDesktop') as string,
         tableNameWeb: formData.get('tableNameWeb') as string,
         recordCountDesktop: Number(formData.get('recordCountDesktop')) || 0,
@@ -108,6 +109,7 @@ const TransferChecks: React.FC = () => {
         projectId: projectId,
         moduleName: formData.get('moduleName') as string,
         subModuleName: formData.get('subModuleName') as string,
+        condition: formData.get('condition') as string,
         tableNameDesktop: formData.get('tableNameDesktop') as string,
         tableNameWeb: formData.get('tableNameWeb') as string,
         recordCountDesktop: Number(formData.get('recordCountDesktop')) || 0,
@@ -204,9 +206,14 @@ const TransferChecks: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Data Transfer Checks</h1>
-          <p className="text-slate-500 dark:text-zinc-400 mt-1">Checklist for table migration tracking.</p>
+        <div className="flex items-center gap-3">
+          <Link to={`/projects/${projectId}`} className="p-2 -ml-2 text-slate-400 hover:text-blue-600 rounded-lg transition-colors">
+            <ArrowLeft size={24} />
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold">Data Transfer Checks</h1>
+            <p className="text-slate-500 dark:text-zinc-400 mt-1">Checklist for table migration tracking.</p>
+          </div>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -260,6 +267,7 @@ const TransferChecks: React.FC = () => {
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 w-12 text-center">Done</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Module</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Sub Module</th>
+                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Condition</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Desktop Table</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Web Table</th>
                 <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Status</th>
@@ -285,6 +293,9 @@ const TransferChecks: React.FC = () => {
                   </td>
                   <td className="px-6 py-4">
                     <span className="text-sm text-slate-600 dark:text-zinc-400">{item.subModuleName}</span>
+                  </td>
+                  <td className="px-6 py-4">
+                    <span className="text-sm text-slate-500 dark:text-zinc-500 italic max-w-[200px] truncate block" title={item.condition}>{item.condition || '-'}</span>
                   </td>
                   <td className="px-6 py-4">
                     <code className="px-2 py-1 bg-slate-100 dark:bg-zinc-800 rounded text-xs font-mono text-slate-700 dark:text-zinc-300">{item.tableNameDesktop}</code>
@@ -377,6 +388,10 @@ const TransferChecks: React.FC = () => {
                       ))}
                     </select>
                   </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">Condition</label>
+                  <input name="condition" defaultValue={editingItem?.condition || ''} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="Optional filter condition..." />
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">Table Name (Desktop)</label>

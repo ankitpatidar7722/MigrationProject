@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { CustomizationPoint, CustomizationType, CustomizationStatus, ModuleMaster } from '../types';
-import { Plus, Search, Tag, DollarSign, StickyNote, Filter, Edit3, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Search, Filter, Trash2, Edit3, Loader2, DollarSign, StickyNote, Tag, ArrowLeft } from 'lucide-react';
 
 const CustomizationPoints: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
@@ -158,9 +158,14 @@ const CustomizationPoints: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Customization Points</h1>
-          <p className="text-slate-500 dark:text-zinc-400 mt-1">Record client-specific post-migration enhancements.</p>
+        <div className="flex items-center gap-3">
+          <Link to={`/projects/${projectId}`} className="p-2 -ml-2 text-slate-400 hover:text-blue-600 rounded-lg transition-colors">
+            <ArrowLeft size={24} />
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold">Customization Points</h1>
+            <p className="text-slate-500 dark:text-zinc-400 mt-1">Record client-specific post-migration enhancements.</p>
+          </div>
         </div>
         <button
           onClick={() => { setEditingItem(null); setShowModal(true); }}

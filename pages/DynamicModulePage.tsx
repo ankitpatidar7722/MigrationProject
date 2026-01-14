@@ -1,226 +1,136 @@
-
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { FieldMaster, DynamicModuleData } from '../types';
-import DynamicForm from '../components/DynamicForm';
-import { Plus, Search, Download, Trash2, Edit3, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import DynamicFormRenderer from '../components/DynamicFormRenderer';
+import { Loader2, Database, ArrowLeft } from 'lucide-react';
 
-interface Props {
-  moduleGroupId: number;
-  title: string;
-  subtitle: string;
-}
+const DynamicModulePage: React.FC = () => {
+  // We expect projectId and moduleGroupId in params
+  // Currently the router might not support moduleGroupId param yet, 
+  // so we might need to rely on query or context, OR map specific routes to IDs
+  const { projectId: projectIdStr, moduleName } = useParams<{ projectId: string; moduleName: string }>();
+  const projectId = parseInt(projectIdStr || '0');
 
-const DynamicModulePage: React.FC<Props> = ({ moduleGroupId, title, subtitle }) => {
-  const { projectId: projectIdStr } = useParams<{ projectId: string }>();
-  const projectId = projectIdStr ? parseInt(projectIdStr, 10) : 0;
+  // Mapping moduleName (from URL) to moduleGroupId (database)
+  // In a real app, this might be fetched or passed via state.
+  // For now, hardcode based on user prompt examples:
+  // "Customization" -> 3
+  const getModuleGroupId = (name: string) => {
+    switch (name?.toLowerCase()) {
+      case 'customization': return 3;
+      case 'migration-issues': return 4;
+      // Add others as needed
+      default: return 3; // Defaulting to customization for demo
+    }
+  };
+
+  const moduleGroupId = getModuleGroupId(moduleName || '');
 
   const [fields, setFields] = useState<FieldMaster[]>([]);
-  const [items, setItems] = useState<DynamicModuleData[]>([]);
-  const [search, setSearch] = useState('');
-  const [showModal, setShowModal] = useState(false);
-  const [editingItem, setEditingItem] = useState<DynamicModuleData | null>(null);
+  const [existingData, setExistingData] = useState<any>({});
+  const [recordId, setRecordId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (projectId) {
-      loadPageData();
+    if (projectId && moduleGroupId) {
+      loadData();
     }
   }, [projectId, moduleGroupId]);
 
-  const loadPageData = async () => {
+  const loadData = async () => {
     setLoading(true);
     try {
-      const [fieldData, moduleData] = await Promise.all([
-        api.fieldMaster.getByModuleGroup(moduleGroupId),
-        api.moduleData.get(projectId, moduleGroupId)
-      ]);
-      setFields(fieldData);
-      setItems(moduleData);
-    } catch (error) {
-      console.error('Error loading page data:', error);
-      setFields([]);
-      setItems([]);
+      // 1. Fetch Field Definitions
+      const fieldsData = await api.fieldMaster.getByModuleGroup(moduleGroupId);
+      setFields(fieldsData);
+
+      // 2. Fetch Existing Data
+      const moduleDataList = await api.moduleData.get(projectId, moduleGroupId);
+      if (moduleDataList && moduleDataList.length > 0) {
+        // Assuming one record per module for now (Singleton pattern for customization)
+        // If it's a list (like Issues), we'd need a list view first. 
+        // For "Customization Checklist", it's likely a single form for the project.
+        const latest = moduleDataList[0];
+        setRecordId(latest.recordId);
+        if (latest.jsonData) {
+          setExistingData(JSON.parse(latest.jsonData));
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load dynamic module', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleSave = async (data: Record<string, any>) => {
+  const handleSave = async (formData: any) => {
+    setSaving(true);
     try {
-      const entry: DynamicModuleData = {
-        id: editingItem?.id || crypto.randomUUID(),
+      const payload: DynamicModuleData = {
+        // If recordId exists, use it, else generic new ID (backend might generate or we gen UUID)
+        recordId: recordId || crypto.randomUUID(),
         projectId: projectId,
-        moduleGroupId,
-        data,
-        createdAt: editingItem?.createdAt || new Date().toISOString()
+        moduleGroupId: moduleGroupId,
+        jsonData: JSON.stringify(formData),
+        status: 'Active',
+        isCompleted: false // Logic to determine completion?
       };
 
-      if (editingItem) {
-        await api.moduleData.update(entry.id, entry);
+      if (recordId) {
+        await api.moduleData.update(recordId, payload);
       } else {
-        await api.moduleData.create(entry);
+        const created = await api.moduleData.create(payload);
+        setRecordId(created.recordId);
       }
-
-      await loadPageData();
-      setShowModal(false);
-      setEditingItem(null);
-    } catch (error) {
-      console.error('Error saving data:', error);
-      alert('Failed to save data. Please try again.');
+      alert('Saved successfully!');
+    } catch (err) {
+      console.error('Save failed', err);
+      alert('Failed to save data.');
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = async (id: string) => {
-    if (confirm('Permanently delete this record?')) {
-      try {
-        await api.moduleData.delete(id);
-        await loadPageData();
-      } catch (error) {
-        console.error('Error deleting data:', error);
-        alert('Failed to delete record. Please try again.');
-      }
-    }
-  };
-
-  const filtered = items.filter(item => {
-    const searchString = Object.values(item.data).join(' ').toLowerCase();
-    return searchString.includes(search.toLowerCase());
-  });
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Completed': case 'Correct': case 'Resolved': return 'bg-emerald-500 text-white';
-      case 'Pending': case 'In Progress': return 'bg-orange-500 text-white';
-      case 'Incorrect': case 'Open': return 'bg-red-500 text-white';
-      default: return 'bg-slate-300 text-slate-700';
-    }
-  };
-
-  const exportCSV = () => {
-    if (fields.length === 0) return;
-    const headers = fields.map(f => f.fieldName);
-    const rows = filtered.map(i => fields.map(f => i.data[f.fieldName] ?? ''));
-    const csvContent = [headers, ...rows].map(e => e.join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `${title.replace(/\s/g, '_')}_export.csv`;
-    link.click();
-  };
-
-  if (loading) return <div className="p-20 text-center animate-pulse text-slate-400">Loading dynamic module context...</div>;
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader2 className="animate-spin text-blue-600" size={32} />
+      </div>
+    );
+  }
 
   return (
-    <div className="space-y-6 animate-in slide-in-from-bottom-2 duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="max-w-4xl mx-auto space-y-6">
+      <div className="flex items-center gap-4 mb-8">
+        <Link to={`/projects/${projectId}`} className="p-2 -ml-2 text-slate-400 hover:text-blue-600 rounded-lg transition-colors">
+          <ArrowLeft size={24} />
+        </Link>
+        <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center text-blue-600 dark:text-blue-400">
+          <Database size={24} />
+        </div>
         <div>
-          <h1 className="text-3xl font-bold">{title}</h1>
-          <p className="text-slate-500 dark:text-zinc-400 mt-1">{subtitle}</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <button onClick={exportCSV} className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg font-medium text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all">
-            <Download size={18} />
-            Export
-          </button>
-          <button
-            onClick={() => { setEditingItem(null); setShowModal(true); }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm"
-          >
-            <Plus size={18} />
-            New Entry
-          </button>
+          <h1 className="text-3xl font-bold capitalize">{moduleName?.replace('-', ' ')} Module</h1>
+          <p className="text-slate-500">Dynamic Data Entry</p>
         </div>
       </div>
 
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-        <input
-          type="text"
-          placeholder={`Search ${title.toLowerCase()}...`}
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          className="w-full pl-10 pr-4 py-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20"
-        />
+      <div className="bg-white dark:bg-zinc-900 rounded-3xl p-8 shadow-sm border border-slate-200 dark:border-zinc-800">
+        {fields.length === 0 ? (
+          <div className="text-center py-12 text-slate-400">
+            <p>No fields configured for this module.</p>
+            <p className="text-sm mt-2">Go to Field Manager to configure fields.</p>
+          </div>
+        ) : (
+          <DynamicFormRenderer
+            fields={fields}
+            initialData={existingData}
+            onSubmit={handleSave}
+            isSubmitting={saving}
+          />
+        )}
       </div>
-
-      <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto notion-scrollbar">
-          <table className="w-full text-left border-collapse">
-            <thead>
-              <tr className="bg-slate-50/50 dark:bg-zinc-800/50 border-b border-slate-200 dark:border-zinc-800">
-                {fields.map(field => (
-                  <th key={field.fieldId} className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 whitespace-nowrap">
-                    {field.fieldName}
-                  </th>
-                ))}
-                <th className="px-6 py-4 text-[10px] font-bold uppercase tracking-widest text-slate-500 dark:text-zinc-400 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
-              {filtered.map(item => (
-                <tr key={item.id} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/30 transition-colors group">
-                  {fields.map(field => {
-                    const value = item.data[field.fieldName];
-                    return (
-                      <td key={field.fieldId} className="px-6 py-4 text-sm max-w-xs truncate">
-                        {field.dataType === 'bit' ? (
-                          <div className={`w-5 h-5 rounded flex items-center justify-center ${value ? 'bg-emerald-500 text-white' : 'bg-slate-100 dark:bg-zinc-800 text-transparent'}`}>
-                            <CheckCircle size={14} />
-                          </div>
-                        ) : field.fieldName === 'Status' ? (
-                          <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${getStatusColor(value)}`}>
-                            {value}
-                          </span>
-                        ) : (
-                          <span className={field.dataType === 'text' ? 'line-clamp-1' : ''}>
-                            {value || <span className="text-slate-300 italic">N/A</span>}
-                          </span>
-                        )}
-                      </td>
-                    );
-                  })}
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        onClick={() => { setEditingItem(item); setShowModal(true); }}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                      >
-                        <Edit3 size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(item.id)}
-                        className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={fields.length + 1} className="px-6 py-20 text-center text-slate-400 italic">
-                    No records found for this view.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {showModal && (
-        <DynamicForm
-          fields={fields}
-          initialData={editingItem?.data}
-          title={editingItem ? `Edit ${title}` : `New ${title}`}
-          onSave={handleSave}
-          onCancel={() => setShowModal(false)}
-        />
-      )}
     </div>
   );
 };

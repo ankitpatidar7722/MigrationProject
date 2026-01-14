@@ -61,8 +61,11 @@ public class ProjectService : IProjectService
         existing.ProjectType = project.ProjectType;
         existing.StartDate = project.StartDate;
         existing.TargetCompletionDate = project.TargetCompletionDate;
+        existing.LiveDate = project.LiveDate;
         existing.ProjectManager = project.ProjectManager;
         existing.TechnicalLead = project.TechnicalLead;
+        existing.ImplementationCoordinator = project.ImplementationCoordinator;
+        existing.CoordinatorEmail = project.CoordinatorEmail;
         existing.UpdatedAt = DateTime.Now;
 
         await _context.SaveChangesAsync();
@@ -230,10 +233,49 @@ public class DataTransferService : IDataTransferService
 
     public async Task<IEnumerable<DataTransferCheck>> GetByProjectIdAsync(long projectId)
     {
-        return await _context.DataTransferChecks
+        // 1. Fetch existing checks
+        var existingChecks = await _context.DataTransferChecks
             .Where(d => d.ProjectId == projectId)
-            .OrderByDescending(d => d.CreatedAt)
             .ToListAsync();
+
+        // 2. Fetch Master Fields for Data Transfer (ModuleGroupId = 1001)
+        var masterFields = await _context.FieldMaster
+            .Where(f => f.ModuleGroupId == 1001 && f.IsActive)
+            .ToListAsync();
+
+        bool newAdded = false;
+
+        foreach (var field in masterFields)
+        {
+            // Check if this master field is already tracked in this project
+            // Matching logic: TableNameDesktop == FieldName
+            if (!existingChecks.Any(c => c.TableNameDesktop == field.FieldName))
+            {
+                var newCheck = new DataTransferCheck
+                {
+                    ProjectId = projectId,
+                    ModuleName = !string.IsNullOrEmpty(field.DefaultValue) ? field.DefaultValue : "General",
+                    SubModuleName = "Standard",
+                    TableNameDesktop = field.FieldName,
+                    TableNameWeb = !string.IsNullOrEmpty(field.FieldLabel) ? field.FieldLabel : field.FieldName,
+                    Status = "Not Started",
+                    CreatedAt = DateTime.Now,
+                    UpdatedAt = DateTime.Now,
+                    Comments = field.FieldDescription
+                };
+                
+                _context.DataTransferChecks.Add(newCheck);
+                existingChecks.Add(newCheck); // Add to local list to return
+                newAdded = true;
+            }
+        }
+
+        if (newAdded)
+        {
+            await _context.SaveChangesAsync();
+        }
+
+        return existingChecks.OrderByDescending(d => d.CreatedAt);
     }
 
     public async Task<DataTransferCheck?> GetByIdAsync(long id)

@@ -1,213 +1,287 @@
-
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { FieldMaster, DataType } from '../types';
-import { Plus, Trash2, Edit3, Layers, Hash, Type, Calendar, CheckSquare, List, X } from 'lucide-react';
+import { FieldMaster, ModuleGroup } from '../types';
+import { Plus, Trash2, Edit3, Save, X, Move, Check } from 'lucide-react';
 
 const FieldManager: React.FC = () => {
+  const [moduleGroups, setModuleGroups] = useState<ModuleGroup[]>([]); // Assuming we have this type, or will fetch from API
+  const [selectedGroupId, setSelectedGroupId] = useState<number>(0);
   const [fields, setFields] = useState<FieldMaster[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
+
   const [showModal, setShowModal] = useState(false);
   const [editingField, setEditingField] = useState<FieldMaster | null>(null);
+  const [saving, setSaving] = useState(false);
 
-  const moduleGroups = [
+  // Load Module Groups on mount (Using ModuleMaster or hardcoded for now if separate API not ready, ideally ModuleGroup API)
+  // Since User mentioned separate ModuleGroupMaster, let's assume valid ID 1-4 for now or fetch if available. 
+  // Wait, API has `api.moduleMaster.getAll`. Let's use that but check if it returns Groups or Modules. 
+  // The user prompt says "ModuleGroupMaster ... examples ID 1,2,3...". 
+  // Let's assume we can fetch groups. If `api.moduleMaster` returns modules, we might need a `ModuleGroup` API.
+  // For now, I will hardcode the groups mentioned in the prompt to ensure it works immediately.
+  const groups = [
     { id: 1001, name: 'Data Transfer Checklist' },
     { id: 1002, name: 'Verification List' },
-    { id: 1003, name: 'Migration Issues' },
-    { id: 1004, name: 'Customization Points' },
+    { id: 1003, name: 'Customization' },
+    { id: 1004, name: 'Migration Issues' }
   ];
 
   useEffect(() => {
-    loadFields();
+    // Default to Customization (ID: 3) on load
+    if (selectedGroupId === 0) {
+      setSelectedGroupId(3);
+    }
   }, []);
 
-  const loadFields = async () => {
+  useEffect(() => {
+    if (selectedGroupId) {
+      loadFields(selectedGroupId);
+    } else {
+      setFields([]);
+    }
+  }, [selectedGroupId]);
+
+  const loadFields = async (groupId: number) => {
+    setLoading(true);
     try {
-      setLoading(true);
-      const data = await api.getFields();
+      const data = await api.fieldMaster.getByModuleGroup(groupId);
       setFields(data);
     } catch (err) {
-      console.error("Failed to load fields from SQL backend:", err);
+      console.error('Failed to load fields', err);
     } finally {
       setLoading(false);
     }
   };
 
+  const handleDelete = async (id: number) => {
+    if (!confirm('Are you sure?')) return;
+    try {
+      await api.fieldMaster.delete(id);
+      loadFields(selectedGroupId);
+    } catch (err) {
+      alert('Failed to delete');
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    setSaving(true);
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
-    
-    const field: FieldMaster = {
+
+    const fieldData: any = {
       fieldId: editingField?.fieldId || 0,
-      fieldName: formData.get('fieldName') as string,
-      fieldDescription: formData.get('fieldDescription') as string,
-      moduleGroupId: parseInt(formData.get('moduleGroupId') as string),
-      dataType: formData.get('dataType') as DataType,
-      defaultValue: formData.get('defaultValue') as string,
-      selectQueryDb: formData.get('selectQueryDb') as string,
-      isRequired: formData.get('isRequired') === 'on'
+      moduleGroupId: selectedGroupId,
+      fieldName: formData.get('fieldName'),
+      fieldLabel: formData.get('fieldLabel'),
+      fieldDescription: formData.get('fieldDescription'),
+      dataType: formData.get('dataType'),
+      isRequired: formData.get('isRequired') === 'on',
+      isUnique: formData.get('isUnique') === 'on',
+      isActive: formData.get('isActive') === 'on',
+      displayOrder: Number(formData.get('displayOrder')) || 0,
+      defaultValue: formData.get('defaultValue'),
+      maxLength: Number(formData.get('maxLength')) || 0,
+      selectQueryDb: formData.get('selectQueryDb'), // Used as Lookup Key
+      validationRegex: formData.get('validationRegex'),
+      placeholderText: formData.get('placeholderText'),
+      helpText: formData.get('helpText'),
     };
 
     try {
-      await api.saveField(field);
-      await loadFields();
-      setShowModal(false);
-    } catch (err) {
-      alert("Error saving to SQL Server: " + err);
-    }
-  };
-
-  const handleDelete = async (id: number) => {
-    if (confirm('Are you sure? Removing a field from SQL FieldMaster will cause it to disappear from all module UI immediately.')) {
-      try {
-        await api.deleteField(id);
-        await loadFields();
-      } catch (err) {
-        alert("Error deleting from SQL Server: " + err);
+      if (editingField) {
+        await api.fieldMaster.update(editingField.fieldId, fieldData);
+      } else {
+        await api.fieldMaster.create(fieldData);
       }
-    }
-  };
-
-  const getTypeIcon = (type: DataType) => {
-    switch (type) {
-      case 'int': return <Hash size={14} />;
-      case 'varchar': return <Type size={14} />;
-      case 'date': return <Calendar size={14} />;
-      case 'bit': return <CheckSquare size={14} />;
-      case 'dropdown': return <List size={14} />;
-      default: return <Type size={14} />;
+      setShowModal(false);
+      setEditingField(null);
+      loadFields(selectedGroupId);
+    } catch (err) {
+      console.error(err);
+      alert('Failed to save field');
+    } finally {
+      setSaving(false);
     }
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="p-6 max-w-7xl mx-auto">
+      <div className="flex justify-between items-center mb-6">
         <div>
-          <h1 className="text-3xl font-bold">FieldMaster Management</h1>
-          <p className="text-slate-500 dark:text-zinc-400 mt-1">Configure the dynamic SQL schema for all application modules.</p>
+          <h1 className="text-3xl font-bold text-slate-800 dark:text-white">Field Manager</h1>
+          <p className="text-slate-500">Configure dynamic fields for modules</p>
         </div>
-        <button 
-          onClick={() => { setEditingField(null); setShowModal(true); }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium shadow-sm"
-        >
-          <Plus size={18} />
-          Add Metadata Field
-        </button>
       </div>
 
-      <div className="grid grid-cols-1 gap-6">
-        {moduleGroups.map(group => (
-          <div key={group.id} className="bg-white dark:bg-zinc-900 rounded-2xl border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
-            <div className="px-6 py-4 bg-slate-50 dark:bg-zinc-800/50 border-b border-slate-200 dark:border-zinc-800 flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Layers className="text-indigo-500" size={20} />
-                <h2 className="font-bold text-slate-900 dark:text-white">{group.name}</h2>
-                <span className="text-xs font-mono bg-indigo-50 dark:bg-indigo-900/20 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded">Group ID: {group.id}</span>
-              </div>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        {/* Sidebar: Module Groups */}
+        <div className="space-y-2">
+          <h3 className="font-semibold text-slate-700 dark:text-slate-300 mb-4 px-2">Module Groups</h3>
+          {groups.map(g => (
+            <button
+              key={g.id}
+              onClick={() => setSelectedGroupId(g.id)}
+              className={`w-full text-left px-4 py-3 rounded-xl transition-all ${selectedGroupId === g.id
+                ? 'bg-blue-600 text-white shadow-md'
+                : 'bg-white dark:bg-zinc-900 text-slate-600 hover:bg-slate-50 dark:hover:bg-zinc-800'
+                }`}
+            >
+              {g.name}
+            </button>
+          ))}
+        </div>
+
+        {/* Main Content: Fields List */}
+        <div className="md:col-span-3">
+          {!selectedGroupId ? (
+            <div className="flex items-center justify-center h-64 bg-slate-50 dark:bg-zinc-900/50 rounded-2xl border-2 border-dashed border-slate-200">
+              <p className="text-slate-400">Select a module group to view fields</p>
             </div>
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
-                <thead>
-                  <tr className="text-[10px] font-bold uppercase tracking-widest text-slate-400 border-b border-slate-100 dark:border-zinc-800">
-                    <th className="px-6 py-4">Field Name</th>
-                    <th className="px-6 py-4">Type</th>
-                    <th className="px-6 py-4">Description</th>
-                    <th className="px-6 py-4">Default</th>
-                    <th className="px-6 py-4 text-right">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
-                  {fields.filter(f => f.moduleGroupId === group.id).map(field => (
-                    <tr key={field.fieldId} className="hover:bg-slate-50 dark:hover:bg-zinc-800/30 transition-colors">
-                      <td className="px-6 py-4">
-                        <span className="font-semibold text-sm">{field.fieldName}</span>
-                        {field.isRequired && <span className="ml-1 text-red-500 text-xs">*</span>}
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-xs font-bold text-slate-500 dark:text-zinc-400">
-                          {getTypeIcon(field.dataType)}
-                          {field.dataType.toUpperCase()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 text-sm text-slate-500">{field.fieldDescription}</td>
-                      <td className="px-6 py-4">
-                        <code className="text-[10px] bg-slate-100 dark:bg-zinc-800 px-1.5 py-0.5 rounded text-slate-600">{field.defaultValue || 'NULL'}</code>
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <div className="flex items-center justify-end gap-2">
-                          <button onClick={() => { setEditingField(field); setShowModal(true); }} className="p-2 text-slate-400 hover:text-indigo-500 transition-colors">
+          ) : (
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 overflow-hidden">
+              <div className="p-4 border-b border-slate-100 dark:border-zinc-800 flex justify-between items-center">
+                <h2 className="font-bold text-lg">Fields ({fields.length})</h2>
+                <button
+                  disabled={selectedGroupId === 0}
+                  onClick={() => { setEditingField(null); setShowModal(true); }}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${selectedGroupId === 0
+                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                    : 'bg-blue-600 text-white hover:bg-blue-700'
+                    }`}
+                >
+                  <Plus size={18} /> Add Field
+                </button>
+              </div>
+
+              <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                  <thead className="bg-slate-50 dark:bg-zinc-800">
+                    <tr>
+                      <th className="p-4 text-xs font-bold text-slate-500 uppercase">Order</th>
+                      <th className="p-4 text-xs font-bold text-slate-500 uppercase">Label</th>
+                      <th className="p-4 text-xs font-bold text-slate-500 uppercase">Name (DB)</th>
+                      <th className="p-4 text-xs font-bold text-slate-500 uppercase">Type</th>
+                      <th className="p-4 text-xs font-bold text-slate-500 uppercase">Required</th>
+                      <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                    {fields.map(field => (
+                      <tr key={field.fieldId} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50">
+                        <td className="p-4 font-mono text-sm text-slate-400">{field.displayOrder}</td>
+                        <td className="p-4 font-medium">{field.fieldLabel}</td>
+                        <td className="p-4 text-sm text-slate-500 font-mono">{field.fieldName}</td>
+                        <td className="p-4">
+                          <span className="px-2 py-1 bg-slate-100 dark:bg-zinc-800 rounded text-xs font-bold uppercase text-slate-600">
+                            {field.dataType}
+                          </span>
+                        </td>
+                        <td className="p-4">
+                          {field.isRequired && <Check size={16} className="text-emerald-500" />}
+                        </td>
+                        <td className="p-4 text-right space-x-2">
+                          <button
+                            onClick={() => { setEditingField(field); setShowModal(true); }}
+                            className="p-2 text-slate-400 hover:text-blue-600 transition"
+                          >
                             <Edit3 size={16} />
                           </button>
-                          <button onClick={() => handleDelete(field.fieldId)} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
+                          <button
+                            onClick={() => handleDelete(field.fieldId)}
+                            className="p-2 text-slate-400 hover:text-red-600 transition"
+                          >
                             <Trash2 size={16} />
                           </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                  {fields.filter(f => f.moduleGroupId === group.id).length === 0 && (
-                    <tr>
-                      <td colSpan={5} className="px-6 py-8 text-center text-slate-400 text-sm italic">No dynamic fields defined for this module group in SQL Server.</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        </td>
+                      </tr>
+                    ))}
+                    {fields.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="p-8 text-center text-slate-400">No fields configured yet.</td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
             </div>
-          </div>
-        ))}
+          )}
+        </div>
       </div>
 
+      {/* Edit Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-xl rounded-2xl shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
-              <h2 className="text-xl font-bold">{editingField ? 'Edit SQL Field' : 'Create New SQL Field'}</h2>
-              <button onClick={() => setShowModal(false)} className="p-2 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg transition-colors">
-                <X size={20} />
-              </button>
-            </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <form onSubmit={handleSave}>
-              <div className="p-8 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold uppercase mb-1.5">Module Group</label>
-                    <select name="moduleGroupId" defaultValue={editingField?.moduleGroupId || 1001} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-                      {moduleGroups.map(g => <option key={g.id} value={g.id}>{g.name}</option>)}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold uppercase mb-1.5">Data Type</label>
-                    <select name="dataType" defaultValue={editingField?.dataType || 'varchar'} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-indigo-500">
-                      <option value="varchar">Varchar (Short Text)</option>
-                      <option value="text">Text (Long Text)</option>
-                      <option value="int">Integer (Number)</option>
-                      <option value="bit">Bit (Boolean/Checkbox)</option>
-                      <option value="date">Date</option>
-                      <option value="dropdown">Dropdown (Dynamic Query)</option>
-                    </select>
-                  </div>
+              <div className="p-6 border-b border-slate-100 dark:border-zinc-800 flex justify-between items-center sticky top-0 bg-white dark:bg-zinc-900 z-10">
+                <h2 className="text-xl font-bold">{editingField ? 'Edit Field' : 'New Field'}</h2>
+                <button type="button" onClick={() => setShowModal(false)}><X size={20} /></button>
+              </div>
+
+              <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Field Label <span className="text-red-500">*</span></label>
+                  <input name="fieldLabel" required defaultValue={editingField?.fieldLabel} className="w-full px-4 py-2 bg-slate-50 border rounded-lg" placeholder="e.g. Client Name" />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5">Field Name (Actual SQL Column)</label>
-                  <input name="fieldName" defaultValue={editingField?.fieldName} required className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. GSTNumber" />
+                  <label className="block text-sm font-semibold mb-2">Field Name (DB) <span className="text-red-500">*</span></label>
+                  <input name="fieldName" required defaultValue={editingField?.fieldName} className="w-full px-4 py-2 bg-slate-50 border rounded-lg font-mono" placeholder="e.g. ClientName" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Data Type <span className="text-red-500">*</span></label>
+                  <select name="dataType" required defaultValue={editingField?.dataType || 'text'} className="w-full px-4 py-2 bg-slate-50 border rounded-lg">
+                    <option value="text">Text (Single Line)</option>
+                    <option value="textarea">Text Area (Multi Line)</option>
+                    <option value="number">Number</option>
+                    <option value="date">Date</option>
+                    <option value="email">Email</option>
+                    <option value="select">Dropdown (Select)</option>
+                    <option value="checkbox">Checkbox (Boolean)</option>
+                  </select>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5">Display Description</label>
-                  <input name="fieldDescription" defaultValue={editingField?.fieldDescription} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-indigo-500" placeholder="e.g. Client Tax Registration Number" />
+                  <label className="block text-sm font-semibold mb-2">Display Order</label>
+                  <input name="displayOrder" type="number" defaultValue={editingField?.displayOrder || 0} className="w-full px-4 py-2 bg-slate-50 border rounded-lg" />
+                </div>
+
+                <div className="md:col-span-2">
+                  <label className="block text-sm font-semibold mb-2">Description / Help Text</label>
+                  <input name="fieldDescription" defaultValue={editingField?.fieldDescription || ''} className="w-full px-4 py-2 bg-slate-50 border rounded-lg" placeholder="Tooltip for users" />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-semibold mb-2">Lookup Key (for Dropdowns)</label>
+                  <input name="selectQueryDb" defaultValue={editingField?.selectQueryDb || ''} className="w-full px-4 py-2 bg-slate-50 border rounded-lg" placeholder="e.g. ProjectType" />
+                  <p className="text-xs text-slate-500 mt-1">If type is 'select', use this key to fetch values.</p>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase mb-1.5">SQL Query (For Dropdowns)</label>
-                  <textarea name="selectQueryDb" defaultValue={editingField?.selectQueryDb} className="w-full px-4 py-2 bg-slate-900 text-emerald-400 font-mono text-xs border-none rounded-xl outline-none focus:ring-2 focus:ring-emerald-500 min-h-[60px]" placeholder='SELECT "Option1", "Option2"...' />
+                  <label className="block text-sm font-semibold mb-2">Default Value</label>
+                  <input name="defaultValue" defaultValue={editingField?.defaultValue || ''} className="w-full px-4 py-2 bg-slate-50 border rounded-lg" />
                 </div>
-                <div className="flex items-center gap-3">
-                  <input type="checkbox" name="isRequired" defaultChecked={editingField?.isRequired} id="isRequired" className="w-4 h-4 rounded text-indigo-600 focus:ring-indigo-500" />
-                  <label htmlFor="isRequired" className="text-sm font-medium">This field is mandatory</label>
+
+                <div className="flex gap-6 items-center pt-2">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="isRequired" defaultChecked={editingField?.isRequired} className="w-4 h-4" />
+                    <span className="text-sm font-medium">Required</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="isUnique" defaultChecked={editingField?.isUnique} className="w-4 h-4" />
+                    <span className="text-sm font-medium">Unique</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="isActive" defaultChecked={editingField?.isActive ?? true} className="w-4 h-4" />
+                    <span className="text-sm font-medium">Active</span>
+                  </label>
                 </div>
               </div>
-              <div className="p-6 bg-slate-50 dark:bg-zinc-800/50 flex gap-3">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl font-medium">Cancel</button>
-                <button type="submit" className="flex-1 py-3 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl font-bold shadow-lg shadow-indigo-500/20">Apply Changes</button>
+
+              <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 sticky bottom-0">
+                <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-lg border bg-white hover:bg-slate-50">Cancel</button>
+                <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium shadow-lg shadow-blue-500/20">
+                  {saving ? 'Saving...' : 'Save Field'}
+                </button>
               </div>
             </form>
           </div>

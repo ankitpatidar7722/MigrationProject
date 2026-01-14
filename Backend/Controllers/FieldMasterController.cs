@@ -46,13 +46,26 @@ public class FieldMasterController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<FieldMaster>> Create(FieldMaster field)
     {
-        field.CreatedAt = DateTime.Now;
-        field.UpdatedAt = DateTime.Now;
-        
-        _context.FieldMaster.Add(field);
-        await _context.SaveChangesAsync();
+        try 
+        {
+            var logPath = Path.Combine(Directory.GetCurrentDirectory(), "debug_field_info.log");
+            System.IO.File.AppendAllText(logPath, $"{DateTime.Now}: Creating Field: {field.FieldName}, Group: {field.ModuleGroupId}\n");
 
-        return CreatedAtAction(nameof(GetById), new { id = field.FieldId }, field);
+            field.CreatedAt = DateTime.Now;
+            field.UpdatedAt = DateTime.Now;
+            
+            _context.FieldMaster.Add(field);
+            await _context.SaveChangesAsync();
+
+            return CreatedAtAction(nameof(GetById), new { id = field.FieldId }, field);
+        }
+        catch (Exception ex)
+        {
+            var logPath = Path.Combine(Directory.GetCurrentDirectory(), "debug_field_error.log");
+            var errorLog = $"{DateTime.Now}: Error: {ex.Message}\nInner: {ex.InnerException?.Message}\nStack: {ex.StackTrace}\n";
+            System.IO.File.AppendAllText(logPath, errorLog);
+            return StatusCode(500, $"Internal Server Error: {ex.Message}");
+        }
     }
 
     [HttpPut("{id}")]
@@ -73,10 +86,30 @@ public class FieldMasterController : ControllerBase
         existing.DefaultValue = field.DefaultValue;
         existing.SelectQueryDb = field.SelectQueryDb;
         existing.DisplayOrder = field.DisplayOrder;
+        
+        // New fields
+        existing.ValidationRegex = field.ValidationRegex;
+        existing.PlaceholderText = field.PlaceholderText;
+        existing.HelpText = field.HelpText;
+        existing.IsUnique = field.IsUnique;
+        existing.MaxLength = field.MaxLength;
+        
         existing.UpdatedAt = DateTime.Now;
 
         await _context.SaveChangesAsync();
         return Ok(existing);
+    }
+
+    [HttpGet("lookup/{type}")]
+    public async Task<ActionResult<IEnumerable<object>>> GetLookupValues(string type)
+    {
+        // Security: Only allow fetching from LookupData table based on type
+        // This avoids executing raw SQL from frontend
+        return Ok(await _context.LookupData
+            .Where(l => l.LookupType == type && l.IsActive)
+            .OrderBy(l => l.DisplayOrder)
+            .Select(l => new { l.LookupKey, l.LookupValue })
+            .ToListAsync());
     }
 
     [HttpDelete("{id}")]

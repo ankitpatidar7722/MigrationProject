@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { VerificationRecord, VerificationStatus, ModuleMaster } from '../types';
-import { Plus, Search, Filter, Trash2, Edit3, Download, Check, Code, MessageSquare, Info, ShieldCheck, Loader2 } from 'lucide-react';
+import { Plus, Search, Filter, Trash2, Edit3, Download, Check, Code, MessageSquare, Info, ShieldCheck, Loader2, Copy, ArrowLeft } from 'lucide-react';
 
 const VerificationList: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
@@ -179,9 +179,14 @@ const VerificationList: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Verification List</h1>
-          <p className="text-slate-500 dark:text-zinc-400 mt-1">Audit and verify field-level logic accuracy.</p>
+        <div className="flex items-center gap-3">
+          <Link to={`/projects/${projectId}`} className="p-2 -ml-2 text-slate-400 hover:text-blue-600 rounded-lg transition-colors">
+            <ArrowLeft size={24} />
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold">Verification List</h1>
+            <p className="text-slate-500 dark:text-zinc-400 mt-1">Audit and verify field-level logic accuracy.</p>
+          </div>
         </div>
         <button
           onClick={() => {
@@ -239,9 +244,12 @@ const VerificationList: React.FC = () => {
 
               {item.sqlQuery && (
                 <div className="mt-4 bg-slate-50 dark:bg-zinc-800/50 rounded-xl p-4 border border-slate-100 dark:border-zinc-800">
-                  <div className="flex items-center gap-2 mb-2 text-slate-500 dark:text-zinc-400">
-                    <Code size={14} />
-                    <span className="text-xs font-bold uppercase">SQL Reference</span>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-2 text-slate-500 dark:text-zinc-400">
+                      <Code size={14} />
+                      <span className="text-xs font-bold uppercase">SQL Reference</span>
+                    </div>
+                    <CopyButton text={item.sqlQuery} />
                   </div>
                   <pre className="text-xs font-mono text-slate-700 dark:text-zinc-300 overflow-x-auto notion-scrollbar whitespace-pre-wrap">
                     {item.sqlQuery}
@@ -405,5 +413,30 @@ const VerificationList: React.FC = () => {
 const XIcon = ({ size }: { size: number }) => (
   <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
 );
+
+const CopyButton = ({ text }: { text: string }) => {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy text: ', err);
+    }
+  };
+
+  return (
+    <button
+      onClick={handleCopy}
+      className="flex items-center gap-1.5 px-2 py-1 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-md transition-colors text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-zinc-400 dark:hover:text-zinc-200"
+      title="Copy SQL query"
+    >
+      {copied ? <Check size={12} className="text-emerald-500" /> : <Copy size={12} />}
+      <span>{copied ? 'Copied!' : 'Copy'}</span>
+    </button>
+  );
+};
 
 export default VerificationList;

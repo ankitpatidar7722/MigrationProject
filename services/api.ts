@@ -280,6 +280,11 @@ export const api = {
       });
       return handleResponse<void>(response);
     },
+
+    getLookupValues: async (type: string): Promise<{ lookupKey: string; lookupValue: string }[]> => {
+      const response = await fetch(`${BASE_URL}/FieldMaster/lookup/${type}`);
+      return handleResponse<{ lookupKey: string; lookupValue: string }[]>(response);
+    },
   },
 
   // ==================== DYNAMIC MODULE DATA ====================

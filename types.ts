@@ -1,5 +1,6 @@
 
-export type DataType = 'int' | 'varchar' | 'text' | 'date' | 'bit' | 'dropdown';
+
+export type DataType = 'int' | 'varchar' | 'text' | 'date' | 'bit' | 'dropdown' | 'textarea' | 'number' | 'email' | 'select' | 'checkbox';
 
 /**
  * Maps directly to FieldMaster table in MS SQL Server
@@ -7,19 +8,41 @@ export type DataType = 'int' | 'varchar' | 'text' | 'date' | 'bit' | 'dropdown';
 export interface FieldMaster {
   fieldId: number;         // Primary Key
   fieldName: string;       // Actual column name
-  fieldDescription: string;
+  fieldLabel: string;
+  fieldDescription?: string;
   moduleGroupId: number;   // 1001, 1002, etc.
   dataType: DataType;      // DataTypes column in SQL
-  defaultValue: string;
-  selectQueryDb: string;   // SQL Query for dropdown population
+  defaultValue?: string;
+  selectQueryDb?: string;   // SQL Query for dropdown population
+  validationRegex?: string;
+  placeholderText?: string;
+  helpText?: string;
   isRequired: boolean;
+  isUnique?: boolean;
+  isActive?: boolean;
+  displayOrder: number;
+  maxLength?: number;
 }
 
 export interface Project {
-  projectId: number;  // Changed from string to number to match backend long
+  projectId: number;
   clientName: string;
+  clientCode?: string;
   description: string;
+  projectType?: string;
+  status: string;
+  startDate?: string;
+  targetCompletionDate?: string;
+  actualCompletionDate?: string;
+  liveDate?: string;
+  projectManager?: string;
+  technicalLead?: string;
+  budget?: number;
+  implementationCoordinator?: string;
+  coordinatorEmail?: string;
+  isActive: boolean;
   createdAt: string;
+  updatedAt?: string;
 }
 
 export interface ModuleGroup {
@@ -32,11 +55,13 @@ export interface ModuleGroup {
  * Dynamically rendered module data
  */
 export interface DynamicModuleData {
-  id: string;
+  recordId: string;
   projectId: number;
   moduleGroupId: number;
-  data: Record<string, any>; // Map of FieldName -> Value
-  createdAt: string;
+  jsonData: string; // JSON String from backend
+  status: string;
+  isCompleted: boolean;
+  createdAt?: string;
 }
 
 export interface DashboardStats {
@@ -52,6 +77,7 @@ export interface DataTransferCheck {
   projectId: number;
   moduleName: string;
   subModuleName: string;
+  condition?: string;
   tableNameDesktop: string;
   tableNameWeb: string;
   recordCountDesktop?: number;

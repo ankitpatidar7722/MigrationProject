@@ -1,9 +1,9 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { MigrationIssue, IssueStatus, ModuleMaster } from '../types';
-import { Plus, Search, Filter, AlertCircle, Clock, CheckCircle, XCircle, MoreVertical, Loader2 } from 'lucide-react';
+import { Plus, Search, Filter, AlertCircle, Clock, CheckCircle, XCircle, MoreVertical, Loader2, ArrowLeft } from 'lucide-react';
 
 const MigrationIssues: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
@@ -176,9 +176,14 @@ const MigrationIssues: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold">Migration Issues</h1>
-          <p className="text-slate-500 dark:text-zinc-400 mt-1">Track and resolve data migration blockers.</p>
+        <div className="flex items-center gap-3">
+          <Link to={`/projects/${projectId}`} className="p-2 -ml-2 text-slate-400 hover:text-blue-600 rounded-lg transition-colors">
+            <ArrowLeft size={24} />
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold">Migration Issues</h1>
+            <p className="text-slate-500 dark:text-zinc-400 mt-1">Track and resolve data migration blockers.</p>
+          </div>
         </div>
         <button
           onClick={() => { setEditingIssue(null); setShowModal(true); }}
