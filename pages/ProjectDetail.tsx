@@ -1,0 +1,270 @@
+
+import React, { useState, useEffect } from 'react';
+import { useParams, Link } from 'react-router-dom';
+import { storageService } from '../services/storageService';
+import {
+  Database,
+  ShieldCheck,
+  AlertTriangle,
+  Settings2,
+  ChevronRight,
+  LayoutGrid,
+  TrendingUp,
+  FileText,
+  Loader2,
+  Edit2,
+  Check,
+  X
+} from 'lucide-react';
+import { Project, DataTransferCheck, VerificationRecord, MigrationIssue, CustomizationPoint } from '../types';
+
+const ProjectDetail: React.FC = () => {
+  const { projectId: projectIdStr } = useParams<{ projectId: string }>();
+  // Parse projectId to number
+  const projectId = projectIdStr ? parseInt(projectIdStr, 10) : 0;
+
+  const [project, setProject] = useState<Project | null>(null);
+  const [transfers, setTransfers] = useState<DataTransferCheck[]>([]);
+  const [verifications, setVerifications] = useState<VerificationRecord[]>([]);
+  const [issues, setIssues] = useState<MigrationIssue[]>([]);
+  const [customizations, setCustomizations] = useState<CustomizationPoint[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  // Editing state
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [tempName, setTempName] = useState('');
+  const [savingName, setSavingName] = useState(false);
+
+  useEffect(() => {
+    if (!projectId) {
+      setLoading(false);
+      return;
+    }
+
+    const loadData = async () => {
+      try {
+        const [projectsData, transfersData, verificationsData, issuesData, customizationsData] = await Promise.all([
+          storageService.getProjects(),
+          storageService.getTransferChecks(projectId),
+          storageService.getVerifications(projectId),
+          storageService.getIssues(projectId),
+          storageService.getCustomizations(projectId)
+        ]);
+
+        const foundProject = projectsData.find(p => p.projectId === projectId);
+        setProject(foundProject || null);
+        setTransfers(transfersData);
+        setVerifications(verificationsData);
+        setIssues(issuesData);
+        setCustomizations(customizationsData);
+      } catch (err) {
+        console.error('Error loading project data:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadData();
+  }, [projectId]);
+
+  const handleEditName = () => {
+    if (project) {
+      setTempName(project.clientName);
+      setIsEditingName(true);
+    }
+  };
+
+  const handleCancelName = () => {
+    setIsEditingName(false);
+    setTempName('');
+  };
+
+  const handleSaveName = async () => {
+    if (!project || !tempName.trim()) return;
+
+    setSavingName(true);
+    try {
+      const updatedProject = { ...project, clientName: tempName };
+      await storageService.saveProject(updatedProject);
+      setProject(updatedProject);
+      setIsEditingName(false);
+    } catch (error) {
+      console.error('Failed to update project name:', error);
+      alert('Failed to update project name');
+    } finally {
+      setSavingName(false);
+    }
+  };
+
+  const modules = [
+    {
+      id: 'transfer',
+      title: 'Data Transfer Checks',
+      desc: 'Plan and track table migration status',
+      icon: <Database size={24} />,
+      count: transfers.length,
+      completed: transfers.filter(t => t.status === 'Completed').length,
+      color: 'blue',
+      path: 'transfer'
+    },
+    {
+      id: 'verification',
+      title: 'Verification List',
+      desc: 'Post-migration field & logic verification',
+      icon: <ShieldCheck size={24} />,
+      count: verifications.length,
+      completed: verifications.filter(v => v.status === 'Correct').length,
+      color: 'emerald',
+      path: 'verification'
+    },
+    {
+      id: 'issues',
+      title: 'Migration Issues',
+      desc: 'Log and track bugs or blockages',
+      icon: <AlertTriangle size={24} />,
+      count: issues.length,
+      completed: issues.filter(i => i.status === 'Closed').length,
+      color: 'red',
+      path: 'issues'
+    },
+    {
+      id: 'customization',
+      title: 'Customization Points',
+      desc: 'Client-specific post-migration requirements',
+      icon: <Settings2 size={24} />,
+      count: customizations.length,
+      completed: customizations.filter(c => c.status === 'Completed').length,
+      color: 'amber',
+      path: 'customization'
+    }
+  ];
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex flex-col items-center gap-4">
+          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
+          <p className="text-slate-500 dark:text-zinc-400">Loading project...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!project) return <div className="p-8 text-center">Project not found</div>;
+
+  return (
+    <div className="space-y-8 max-w-6xl mx-auto">
+      <div className="bg-white dark:bg-zinc-900 p-8 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center gap-6">
+          <div className="w-16 h-16 rounded-2xl bg-blue-600 text-white flex items-center justify-center font-bold text-3xl shadow-xl shadow-blue-500/20">
+            {project.clientName[0]}
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-3">
+              {isEditingName ? (
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value={tempName}
+                    onChange={(e) => setTempName(e.target.value)}
+                    className="text-3xl font-bold bg-slate-50 dark:bg-zinc-800 border border-slate-300 dark:border-zinc-700 rounded-lg px-2 py-1 outline-none focus:ring-2 focus:ring-blue-500"
+                    autoFocus
+                  />
+                  <button
+                    onClick={handleSaveName}
+                    disabled={savingName}
+                    className="p-1.5 bg-green-100 text-green-600 rounded-lg hover:bg-green-200"
+                  >
+                    <Check size={20} />
+                  </button>
+                  <button
+                    onClick={handleCancelName}
+                    disabled={savingName}
+                    className="p-1.5 bg-red-100 text-red-600 rounded-lg hover:bg-red-200"
+                  >
+                    <X size={20} />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-3 group">
+                  <h1 className="text-3xl font-bold">{project.clientName}</h1>
+                  <button
+                    onClick={handleEditName}
+                    className="p-1.5 text-slate-400 opacity-0 group-hover:opacity-100 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                    title="Edit project name"
+                  >
+                    <Edit2 size={18} />
+                  </button>
+                </div>
+              )}
+              {!isEditingName && (
+                <span className="px-2.5 py-1 bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 rounded-full text-xs font-bold border border-emerald-100 dark:border-emerald-800/30">Active</span>
+              )}
+            </div>
+            <p className="text-slate-500 dark:text-zinc-400 mt-1 max-w-2xl">{project.description}</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+              <FileText size={20} />
+            </button>
+            <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
+              <TrendingUp size={20} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {modules.map(mod => (
+          <Link
+            key={mod.id}
+            to={`/projects/${projectId}/${mod.path}`}
+            className="group block bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm hover:border-blue-500 transition-all duration-300"
+          >
+            <div className="flex items-start gap-4">
+              <div className={`p-3 rounded-xl ${mod.color === 'blue' ? 'bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400' :
+                mod.color === 'emerald' ? 'bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400' :
+                  mod.color === 'red' ? 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400' :
+                    'bg-amber-50 text-amber-600 dark:bg-amber-900/20 dark:text-amber-400'
+                }`}>
+                {mod.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <h3 className="font-bold text-lg group-hover:text-blue-600 transition-colors">{mod.title}</h3>
+                <p className="text-slate-500 dark:text-zinc-400 text-sm mt-0.5 line-clamp-1">{mod.desc}</p>
+
+                <div className="mt-6">
+                  <div className="flex items-center justify-between text-xs font-bold uppercase tracking-wider text-slate-400 dark:text-zinc-500 mb-2">
+                    <span>Progress</span>
+                    <span>{mod.count > 0 ? Math.round((mod.completed / mod.count) * 100) : 0}%</span>
+                  </div>
+                  <div className="h-2 bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+                    <div
+                      className={`h-full transition-all duration-500 rounded-full ${mod.color === 'blue' ? 'bg-blue-500' :
+                        mod.color === 'emerald' ? 'bg-emerald-500' :
+                          mod.color === 'red' ? 'bg-red-500' :
+                            'bg-amber-500'
+                        }`}
+                      style={{ width: `${mod.count > 0 ? (mod.completed / mod.count) * 100 : 0}%` }}
+                    />
+                  </div>
+                  <div className="mt-4 flex items-center justify-between">
+                    <span className="text-xs font-medium text-slate-500 dark:text-zinc-400">
+                      {mod.completed} of {mod.count} records {mod.id === 'issues' ? 'resolved' : 'completed'}
+                    </span>
+                    <div className="text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                      Open Module
+                      <ChevronRight size={14} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+export default ProjectDetail;
