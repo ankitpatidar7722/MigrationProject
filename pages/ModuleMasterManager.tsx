@@ -129,7 +129,42 @@ const ModuleMasterManager: React.FC = () => {
 
     return (
         <div className="space-y-6 max-w-6xl mx-auto">
-            {/* ... (keep existing JSX until table) */}
+            <Link
+                to="/"
+                className="inline-flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors mb-2"
+            >
+                <ArrowLeft size={20} />
+                <span className="font-medium">Back to Dashboard</span>
+            </Link>
+
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold">Modules</h1>
+                    <p className="text-slate-500 dark:text-zinc-400 mt-1">Manage system modules and submodule definitions.</p>
+                </div>
+                <button
+                    onClick={() => {
+                        setEditingModule(null);
+                        setFormData({ moduleName: '', subModuleName: '', groupIndex: 1 });
+                        setShowModal(true);
+                    }}
+                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-all"
+                >
+                    <Plus size={18} />
+                    Add Module
+                </button>
+            </div>
+
+            <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+                <input
+                    type="text"
+                    placeholder="Search modules..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl outline-none shadow-sm focus:ring-2 focus:ring-blue-500/20"
+                />
+            </div>
 
             <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
                 <table className="w-full text-left border-collapse">

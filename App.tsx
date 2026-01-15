@@ -80,6 +80,7 @@ const App: React.FC = () => {
             <Route path="/projects/:projectId/transfer" element={<TransferChecks />} />
             <Route path="/projects/:projectId/verification" element={<VerificationList />} />
             <Route path="/projects/:projectId/issues" element={<MigrationIssues />} />
+            <Route path="/projects/:projectId/customization" element={<CustomizationPoints />} />
             <Route path="/projects/:projectId/emails" element={<EmailDocumentation />} />
             <Route path="/admin/fields" element={<FieldManager />} />
             <Route path="/admin/modules" element={<ModuleMasterManager />} />

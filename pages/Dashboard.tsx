@@ -137,13 +137,6 @@ const Dashboard: React.FC = () => {
           <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Dashboard Overview</h1>
           <p className="text-slate-500 dark:text-zinc-400 mt-1">Real-time tracking of all active data migrations.</p>
         </div>
-        <Link
-          to="/projects"
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm"
-        >
-          <Plus size={18} />
-          New Project
-        </Link>
       </div>
 
       {/* Stats Grid */}

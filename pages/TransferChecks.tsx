@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
-import { DataTransferCheck, Status, ModuleMaster } from '../types';
+import { DataTransferCheck, Status, ModuleMaster, WebTable } from '../types';
 import { Plus, Search, Filter, Trash2, Edit3, Download, Check, Loader2, ArrowLeft } from 'lucide-react';
 
 const TransferChecks: React.FC = () => {
@@ -20,17 +20,20 @@ const TransferChecks: React.FC = () => {
 
   // Module Master State
   const [moduleMasters, setModuleMasters] = useState<ModuleMaster[]>([]);
+  const [webTables, setWebTables] = useState<WebTable[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>('');
 
   const loadItems = async () => {
     if (!projectId) return;
     try {
-      const [data, modules] = await Promise.all([
+      const [data, modules, tables] = await Promise.all([
         api.dataTransfer.getByProject(projectId),
-        api.moduleMaster.getAll()
+        api.moduleMaster.getAll(),
+        api.webTables.getAll()
       ]);
       setItems(data);
       setModuleMasters(modules);
+      setWebTables(tables);
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -54,6 +57,20 @@ const TransferChecks: React.FC = () => {
   const availableSubModules = moduleMasters
     .filter(m => m.moduleName === selectedModule)
     .map(m => m.subModuleName);
+
+  // Filter Web Tables based on selected Module's GroupIndex
+  const availableTables = useMemo(() => {
+    if (!selectedModule) return [];
+
+    // Find the group index of the selected module (using the first match as module names should group together)
+    const moduleInfo = moduleMasters.find(m => m.moduleName === selectedModule);
+    if (!moduleInfo || moduleInfo.groupIndex === undefined) return [];
+
+    return webTables.filter(t => t.groupIndex === moduleInfo.groupIndex);
+  }, [selectedModule, moduleMasters, webTables]);
+
+  const distinctDesktopTables = Array.from(new Set(availableTables.map(t => t.desktopTableName).filter(Boolean)));
+  const distinctWebTables = Array.from(new Set(availableTables.map(t => t.tableName).filter(Boolean)));
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -395,11 +412,33 @@ const TransferChecks: React.FC = () => {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">Table Name (Desktop)</label>
-                  <input name="tableNameDesktop" defaultValue={editingItem?.tableNameDesktop} required className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-mono" />
+                  <select
+                    name="tableNameDesktop"
+                    defaultValue={editingItem?.tableNameDesktop || ""}
+                    required
+                    disabled={!selectedModule}
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-mono disabled:opacity-50"
+                  >
+                    <option value="" disabled hidden>Select Desktop Table</option>
+                    {distinctDesktopTables.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">Table Name (Web)</label>
-                  <input name="tableNameWeb" defaultValue={editingItem?.tableNameWeb} required className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-mono" />
+                  <select
+                    name="tableNameWeb"
+                    defaultValue={editingItem?.tableNameWeb || ""}
+                    required
+                    disabled={!selectedModule}
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-mono disabled:opacity-50"
+                  >
+                    <option value="" disabled hidden>Select Web Table</option>
+                    {distinctWebTables.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-1.5">Initial Status</label>

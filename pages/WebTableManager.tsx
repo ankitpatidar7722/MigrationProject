@@ -157,7 +157,7 @@ const WebTableManager: React.FC = () => {
         .sort((a, b) => (a.moduleName || '').localeCompare(b.moduleName || ''));
 
     return (
-        <div className="space-y-6 max-w-6xl mx-auto">
+        <div className="space-y-6 w-full max-w-[95%] mx-auto">
             <Link
                 to="/"
                 className="inline-flex items-center gap-2 text-slate-500 hover:text-blue-600 transition-colors mb-2"
@@ -195,7 +195,7 @@ const WebTableManager: React.FC = () => {
                 />
             </div>
 
-            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
+            <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm overflow-x-auto">
                 <table className="w-full text-left border-collapse">
                     <thead>
                         <tr className="bg-slate-50 dark:bg-zinc-800/50 text-slate-500 dark:text-zinc-400 text-xs uppercase tracking-wider">
