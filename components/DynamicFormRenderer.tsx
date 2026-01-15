@@ -152,7 +152,7 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
         <form onSubmit={handleSubmit} className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {fields
-                    .filter(f => f.isActive)
+                    .filter(f => f.isActive && f.isDisplay !== false)
                     .sort((a, b) => a.displayOrder - b.displayOrder)
                     .map(field => (
                         <div key={field.fieldId} className={field.dataType === 'textarea' || field.dataType === 'checkbox' ? 'md:col-span-2' : ''}>

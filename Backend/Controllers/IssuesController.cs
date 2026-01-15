@@ -51,4 +51,13 @@ public class IssuesController : ControllerBase
 
         return Ok(updated);
     }
+    [HttpDelete("{id}")]
+    public async Task<IActionResult> Delete(string id)
+    {
+        var result = await _service.DeleteAsync(id);
+        if (!result)
+            return NotFound();
+
+        return NoContent();
+    }
 }

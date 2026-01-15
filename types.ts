@@ -20,6 +20,7 @@ export interface FieldMaster {
   isRequired: boolean;
   isUnique?: boolean;
   isActive?: boolean;
+  isDisplay?: boolean;
   displayOrder: number;
   maxLength?: number;
 }
@@ -157,6 +158,8 @@ export interface ModuleMaster {
 }
 
 
+export type EmailCategory = 'Approval' | 'Clarification' | 'Requirement' | 'General' | 'Issue' | 'Completion' | 'Rejection' | 'Follow-up';
+
 export interface ProjectEmail {
   emailId: number;
   projectId: number;
@@ -171,6 +174,18 @@ export interface ProjectEmail {
   createdAt?: string;
 }
 
+export interface User {
+  userId: number;
+  username: string;
+  role: string;
+  token?: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
 export interface WebTable {
   webTableId: number;
   tableName: string;
@@ -181,4 +196,4 @@ export interface WebTable {
   createdAt?: string;
 }
 
-export type EmailCategory = 'Approval' | 'Clarification' | 'Issue' | 'Completion' | 'Rejection' | 'Follow-up' | 'General';
+

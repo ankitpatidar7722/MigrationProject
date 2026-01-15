@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace MigraTrackAPI.Models;
 
 [Table("CustomizationPoints")]
-public class CustomizationPoint
+public class CustomizationPoint : ISoftDelete
 {
     [Key]
     [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
@@ -69,6 +69,8 @@ public class CustomizationPoint
     public DateTime? CompletedDate { get; set; }
 
     public string? Notes { get; set; }
+
+    public int IsDeletedTransaction { get; set; }
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 

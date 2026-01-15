@@ -156,6 +156,107 @@ const Dashboard: React.FC = () => {
         ))}
       </div>
 
+      {/* Overview Donut Charts */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-[0_0_15px_rgba(168,85,247,0.15)] dark:shadow-[0_0_15px_rgba(168,85,247,0.1)] transition-shadow hover:shadow-[0_0_20px_rgba(168,85,247,0.25)]">
+          <h2 className="text-lg font-bold mb-6 text-center">Project Status Distribution</h2>
+          <div className="h-[250px] w-full flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Active', value: projects.filter(p => p.status === 'Active').length },
+                    { name: 'Completed', value: projects.filter(p => p.status === 'Completed').length },
+                    { name: 'On Hold', value: projects.filter(p => p.status === 'On Hold').length }
+                  ].filter(d => d.value > 0)}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  <Cell key="cell-active" fill="#8b5cf6" />
+                  <Cell key="cell-completed" fill="#d946ef" />
+                  <Cell key="cell-hold" fill="#c4b5fd" />
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    color: '#0f172a',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                  }}
+                  itemStyle={{ fontSize: '12px', color: '#0f172a' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex justify-center gap-6 mt-4 pb-2 border-t border-slate-100 dark:border-zinc-800 pt-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm bg-violet-500"></div>
+              <span className="text-xs text-slate-500 font-medium">Active</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm bg-fuchsia-500"></div>
+              <span className="text-xs text-slate-500 font-medium">Completed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm bg-violet-300"></div>
+              <span className="text-xs text-slate-500 font-medium">On Hold</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-[0_0_15px_rgba(236,72,153,0.15)] dark:shadow-[0_0_15px_rgba(236,72,153,0.1)] transition-shadow hover:shadow-[0_0_20px_rgba(236,72,153,0.25)]">
+          <h2 className="text-lg font-bold mb-6 text-center">Overall Migration Progress</h2>
+          <div className="h-[250px] w-full flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: 'Completed Checks', value: allTransfers.filter(t => t.status === 'Completed').length },
+                    { name: 'Pending Checks', value: allTransfers.filter(t => t.status !== 'Completed').length }
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                  label={({ percent }) => `${(percent * 100).toFixed(0)}%`}
+                >
+                  <Cell key="cell-completed" fill="#d946ef" />
+                  <Cell key="cell-pending" fill="#c4b5fd" />
+                </Pie>
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    color: '#0f172a',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                  }}
+                  itemStyle={{ fontSize: '12px', color: '#0f172a' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+          <div className="flex justify-center gap-6 mt-4 pb-2 border-t border-slate-100 dark:border-zinc-800 pt-4">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm bg-fuchsia-500"></div>
+              <span className="text-xs text-slate-500 font-medium">Completed</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-sm bg-violet-300"></div>
+              <span className="text-xs text-slate-500 font-medium">Pending</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Main Chart */}
         <div className="lg:col-span-2 bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm">
@@ -168,16 +269,31 @@ const Dashboard: React.FC = () => {
           </div>
           <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={chartData}>
+              <BarChart data={chartData} margin={{ top: 20, right: 30, left: 20, bottom: 60 }}>
                 <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
+                <XAxis
+                  dataKey="name"
+                  stroke="#94a3b8"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  angle={-45}
+                  textAnchor="end"
+                  height={60}
+                />
                 <YAxis stroke="#94a3b8" fontSize={12} tickLine={false} axisLine={false} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#1e293b', border: 'none', borderRadius: '8px', color: '#fff' }}
-                  itemStyle={{ fontSize: '12px' }}
+                  contentStyle={{
+                    backgroundColor: '#ffffff',
+                    border: '1px solid #e2e8f0',
+                    borderRadius: '8px',
+                    color: '#0f172a',
+                    boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)'
+                  }}
+                  itemStyle={{ fontSize: '12px', color: '#0f172a' }}
                 />
-                <Bar dataKey="completed" fill="#10b981" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="pending" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="completed" fill="#d946ef" radius={[4, 4, 0, 0]} name="Completed Checks" />
+                <Bar dataKey="pending" fill="#c4b5fd" radius={[4, 4, 0, 0]} name="Pending Checks" />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -209,14 +325,16 @@ const Dashboard: React.FC = () => {
               </div>
             )}
           </div>
-          {projects.length > 0 && (
-            <Link to="/projects" className="mt-8 block text-center text-sm font-semibold text-blue-600 hover:text-blue-700">
-              View All Projects
-            </Link>
-          )}
-        </div>
-      </div>
-    </div>
+          {
+            projects.length > 0 && (
+              <Link to="/projects" className="mt-8 block text-center text-sm font-semibold text-blue-600 hover:text-blue-700">
+                View All Projects
+              </Link>
+            )
+          }
+        </div >
+      </div >
+    </div >
   );
 };
 

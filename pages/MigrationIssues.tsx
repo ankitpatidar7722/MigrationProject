@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { MigrationIssue, IssueStatus, ModuleMaster } from '../types';
-import { Plus, Search, Filter, AlertCircle, Clock, CheckCircle, XCircle, MoreVertical, Loader2, ArrowLeft } from 'lucide-react';
+import { Plus, Search, Filter, AlertCircle, Clock, CheckCircle, XCircle, MoreVertical, Loader2, ArrowLeft, Edit3, Trash2 } from 'lucide-react';
 
 const MigrationIssues: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
@@ -15,6 +15,7 @@ const MigrationIssues: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingIssue, setEditingIssue] = useState<MigrationIssue | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: string | null }>({ show: false, id: null });
 
   // Module Master State
   const [moduleMasters, setModuleMasters] = useState<ModuleMaster[]>([]);
@@ -107,7 +108,7 @@ const MigrationIssues: React.FC = () => {
 
       const formData = new FormData(form);
 
-      const count = issues.length + 1;
+      // const count = issues.length + 1; // Unused
       const uniqueSuffix = Date.now().toString().slice(-6);
       const generatedId = `ISS-${projectId}-${uniqueSuffix}`;
       const newIssue: MigrationIssue = {
@@ -135,6 +136,21 @@ const MigrationIssues: React.FC = () => {
       alert('Failed to save as new record. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = (id: string) => {
+    setDeleteConfirm({ show: true, id });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return;
+    try {
+      await api.issues.delete(deleteConfirm.id);
+      await loadIssues();
+      setDeleteConfirm({ show: false, id: null });
+    } catch (err) {
+      console.error('Error deleting issue:', err);
     }
   };
 
@@ -249,13 +265,26 @@ const MigrationIssues: React.FC = () => {
                     <span className="text-xs text-slate-400">{new Date(issue.reportedDate).toLocaleDateString()}</span>
                   </td>
                   <td className="px-6 py-4 text-right">
-                    <button onClick={() => {
-                      setEditingIssue(issue);
-                      setSelectedModule(issue.moduleName);
-                      setShowModal(true);
-                    }} className="p-2 text-slate-400 hover:text-red-500 transition-colors">
-                      <MoreVertical size={16} />
-                    </button>
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => {
+                          setEditingIssue(issue);
+                          setSelectedModule(issue.moduleName);
+                          setShowModal(true);
+                        }}
+                        className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                        title="Edit Issue"
+                      >
+                        <Edit3 size={16} />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(issue.issueId)}
+                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                        title="Delete Issue"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -272,100 +301,139 @@ const MigrationIssues: React.FC = () => {
       </div>
 
       {/* Modal */}
-      {showModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-y-auto">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden my-auto">
-            <div className="p-6 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
-              <h2 className="text-xl font-bold">{editingIssue ? 'Update Issue' : 'Report New Migration Issue'}</h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
-                <XIcon size={20} />
-              </button>
-            </div>
-            <form onSubmit={handleSave} className="p-6 space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5">Module</label>
-                  <select
-                    name="moduleName"
-                    value={selectedModule}
-                    onChange={(e) => setSelectedModule(e.target.value)}
-                    required
-                    className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none"
-                  >
-                    <option value="">Select Module</option>
-                    {uniqueModules.map(m => (
-                      <option key={m} value={m}>{m}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5">Sub Module</label>
-                  <select
-                    name="subModuleName"
-                    defaultValue={editingIssue?.subModuleName}
-                    required
-                    disabled={!selectedModule}
-                    className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none disabled:opacity-50"
-                  >
-                    <option value="">Select Sub-Module</option>
-                    {availableSubModules.map(sm => (
-                      <option key={sm} value={sm}>{sm}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">Title</label>
-                <input name="title" defaultValue={editingIssue?.title} required className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none" placeholder="Brief issue title" />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">Issue Description</label>
-                <textarea name="description" defaultValue={editingIssue?.description} required className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none min-h-[80px]" />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5">Priority</label>
-                  <select name="priority" defaultValue={editingIssue?.priority || 'Medium'} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-red-500">
-                    <option value="Low">Low</option>
-                    <option value="Medium">Medium</option>
-                    <option value="High">High</option>
-                    <option value="Critical">Critical</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5">Current Status</label>
-                  <select name="status" defaultValue={editingIssue?.status || 'Open'} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-red-500">
-                    <option value="Open">Open</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Resolved">Resolved</option>
-                    <option value="Closed">Closed</option>
-                  </select>
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">Root Cause (If known)</label>
-                <textarea name="rootCause" defaultValue={editingIssue?.rootCause} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none min-h-[60px]" />
-              </div>
-              <div>
-                <label className="block text-sm font-semibold mb-1.5">Solution Notes / Remarks</label>
-                <textarea name="remarks" defaultValue={editingIssue?.remarks} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none min-h-[60px]" />
-              </div>
-              <div className="pt-4 flex gap-3">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 bg-slate-100 dark:bg-zinc-800 rounded-xl font-bold">Cancel</button>
-                {editingIssue && (
-                  <button type="button" onClick={handleSaveAs} disabled={saving} className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50">
-                    {saving ? 'Saving...' : 'Save As New'}
-                  </button>
-                )}
-                <button type="submit" disabled={saving} className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all disabled:opacity-50">
-                  {saving ? 'Saving...' : (editingIssue ? 'Update Issue' : 'Report Issue')}
+      {
+        showModal && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-y-auto">
+            <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden my-auto">
+              <div className="p-6 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
+                <h2 className="text-xl font-bold">{editingIssue ? 'Update Issue' : 'Report New Migration Issue'}</h2>
+                <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
+                  <XIcon size={20} />
                 </button>
               </div>
-            </form>
+              <form onSubmit={handleSave} className="p-6 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold mb-1.5">Module</label>
+                    <select
+                      name="moduleName"
+                      value={selectedModule}
+                      onChange={(e) => setSelectedModule(e.target.value)}
+                      required
+                      className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none"
+                    >
+                      <option value="">Select Module</option>
+                      {uniqueModules.map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-1.5">Sub Module</label>
+                    <select
+                      name="subModuleName"
+                      defaultValue={editingIssue?.subModuleName}
+                      required
+                      disabled={!selectedModule}
+                      className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none disabled:opacity-50"
+                    >
+                      <option value="">Select Sub-Module</option>
+                      {availableSubModules.map(sm => (
+                        <option key={sm} value={sm}>{sm}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">Title</label>
+                  <input name="title" defaultValue={editingIssue?.title} required className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none" placeholder="Brief issue title" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">Issue Description</label>
+                  <textarea name="description" defaultValue={editingIssue?.description} required className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none min-h-[80px]" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-semibold mb-1.5">Priority</label>
+                    <select name="priority" defaultValue={editingIssue?.priority || 'Medium'} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-red-500">
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                      <option value="Critical">Critical</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-semibold mb-1.5">Current Status</label>
+                    <select name="status" defaultValue={editingIssue?.status || 'Open'} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-red-500">
+                      <option value="Open">Open</option>
+                      <option value="In Progress">In Progress</option>
+                      <option value="Resolved">Resolved</option>
+                      <option value="Closed">Closed</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">Root Cause (If known)</label>
+                  <textarea name="rootCause" defaultValue={editingIssue?.rootCause} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none min-h-[60px]" />
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">Solution Notes / Remarks</label>
+                  <textarea name="remarks" defaultValue={editingIssue?.remarks} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none min-h-[60px]" />
+                </div>
+                <div className="pt-4 flex gap-3">
+                  <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 bg-slate-100 dark:bg-zinc-800 rounded-xl font-bold">Cancel</button>
+                  {editingIssue && (
+                    <button type="button" onClick={handleSaveAs} disabled={saving} className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50">
+                      {saving ? 'Saving...' : 'Save As New'}
+                    </button>
+                  )}
+                  <button type="submit" disabled={saving} className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all disabled:opacity-50">
+                    {saving ? 'Saving...' : (editingIssue ? 'Update Issue' : 'Report Issue')}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )
+      }
+      {/* Delete Confirmation Modal */}
+      {
+        deleteConfirm.show && (
+          <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+            <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800">
+              <div className="p-6">
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
+                    <Trash2 size={24} className="text-red-600 dark:text-red-400" />
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-bold text-slate-900 dark:text-white">Delete Issue</h3>
+                    <p className="text-sm text-slate-500 dark:text-zinc-400">This action cannot be undone</p>
+                  </div>
+                </div>
+                <p className="text-slate-600 dark:text-zinc-300 mb-6">
+                  Are you sure you want to delete this migration issue? All data will be permanently removed.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setDeleteConfirm({ show: false, id: null })}
+                    className="flex-1 py-2.5 px-4 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl font-medium transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={confirmDelete}
+                    className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all"
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )
+      }
+    </div >
   );
 };
 

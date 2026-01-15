@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MigraTrackAPI.Models;
 
-public class ProjectEmail
+public class ProjectEmail : ISoftDelete
 {
     [Key]
     public int EmailId { get; set; }
@@ -35,5 +35,6 @@ public class ProjectEmail
     public string? RelatedModule { get; set; } // Optional link to other modules
 
     public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public int IsDeletedTransaction { get; set; }
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
 }

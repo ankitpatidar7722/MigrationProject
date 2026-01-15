@@ -1,13 +1,28 @@
 import React, { useState } from 'react';
-import { Database, ArrowRight } from 'lucide-react';
+import { Database, ArrowRight, Loader2, AlertCircle, Eye, EyeOff } from 'lucide-react';
+import { api } from '../services/api';
 
-const Login: React.FC<{ onLogin: (cred: any) => void }> = ({ onLogin }) => {
-  const [username, setUsername] = useState('admin');
-  const [password, setPassword] = useState('password');
+const Login: React.FC<{ onLogin: (user: any, token: string) => void }> = ({ onLogin }) => {
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    onLogin({ username, password });
+    setLoading(true);
+    setError('');
+
+    try {
+      const response = await api.auth.login({ username, password });
+      onLogin(response.user, response.token);
+    } catch (err) {
+      console.error('Login failed:', err);
+      setError('Invalid username or password');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -17,14 +32,9 @@ const Login: React.FC<{ onLogin: (cred: any) => void }> = ({ onLogin }) => {
         {/* Logo Section */}
         <div className="flex flex-col items-center md:items-start text-center md:text-left animate-in slide-in-from-left duration-700">
           <div className="flex items-center gap-4 mb-2">
-            {/* Stylized Logo 'A' approximation */}
             <div className="relative w-20 h-20">
               <div className="absolute inset-0 bg-white clip-triangle-up" style={{ clipPath: 'polygon(50% 0%, 0% 100%, 100% 100%)' }}></div>
               <div className="absolute top-8 left-0 right-0 h-3 bg-[#0f294d] -skew-y-12"></div>
-              {/* This is a rough CSS approximation of the 'A' logo, replaced with an Icon for simplicity if needed, but trying to be visual */}
-              <div className="absolute inset-0 flex items-center justify-center text-white font-bold text-6xl">
-                {/* Fallback to simple icon if CSS shapes are too complex for guaranteed render */}
-              </div>
             </div>
             <div className="flex flex-col">
               <h1 className="text-5xl md:text-6xl font-extrabold text-white tracking-tight leading-none">
@@ -49,37 +59,54 @@ const Login: React.FC<{ onLogin: (cred: any) => void }> = ({ onLogin }) => {
             Welcome
           </h3>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" autoComplete="off">
             <div>
               <input
                 type="text"
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-full outline-none focus:ring-2 focus:ring-[#0f294d]/50 focus:border-[#0f294d] transition-all text-slate-700 placeholder:text-slate-400"
-                placeholder="Company Name"
-              />
-            </div>
-            <div>
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-full outline-none focus:ring-2 focus:ring-[#0f294d]/50 focus:border-[#0f294d] transition-all text-slate-700 placeholder:text-slate-400"
-                placeholder="Password"
+                placeholder="Enter User Name"
+                autoComplete="off"
               />
             </div>
 
+            <div className="relative">
+              <input
+                type={showPassword ? "text" : "password"}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="w-full px-5 py-3 bg-slate-50 border border-slate-200 rounded-full outline-none focus:ring-2 focus:ring-[#0f294d]/50 focus:border-[#0f294d] transition-all text-slate-700 placeholder:text-slate-400"
+                placeholder="Enter Password"
+                autoComplete="new-password"
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 focus:outline-none"
+              >
+                {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+              </button>
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-2 text-red-600 bg-red-50 p-3 rounded-lg text-sm">
+                <AlertCircle size={16} />
+                {error}
+              </div>
+            )}
+
             <button
               type="submit"
-              className="w-full py-3.5 bg-[#0f294d] hover:bg-[#0a1d36] text-white rounded-full font-bold text-lg shadow-lg shadow-[#0f294d]/30 transition-all hover:scale-[1.02] active:scale-[0.98] mt-4"
+              disabled={loading}
+              className="w-full py-3.5 bg-[#0f294d] hover:bg-[#0a1d36] text-white rounded-full font-bold text-lg shadow-lg shadow-[#0f294d]/30 transition-all hover:scale-[1.02] active:scale-[0.98] mt-4 disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
             >
-              Login
+              {loading ? <Loader2 className="animate-spin" size={20} /> : 'Login'}
             </button>
           </form>
         </div>
       </div>
 
-      {/* CSS for custom logo shape approximation */}
       <style>{`
         .clip-triangle-up {
           clip-path: polygon(50% 0%, 0% 100%, 100% 100%);

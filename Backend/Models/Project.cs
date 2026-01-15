@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MigraTrackAPI.Models;
 
-public class Project
+public class Project : ISoftDelete
 {
     [Key]
     [Column("ProjectId")]
@@ -57,45 +57,11 @@ public class Project
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
     public int? UpdatedBy { get; set; }
+
+    public int IsDeletedTransaction { get; set; }
 }
 
-public class User
-{
-    [Key]
-    public int UserId { get; set; }
-
-    [Required]
-    [MaxLength(100)]
-    public string Username { get; set; } = string.Empty;
-
-    [Required]
-    [MaxLength(255)]
-    public string Email { get; set; } = string.Empty;
-
-    [Required]
-    [MaxLength(500)]
-    public string PasswordHash { get; set; } = string.Empty;
-
-    [MaxLength(100)]
-    public string? FirstName { get; set; }
-
-    [MaxLength(100)]
-    public string? LastName { get; set; }
-
-    [Required]
-    [MaxLength(50)]
-    public string Role { get; set; } = "User";
-
-    public bool IsActive { get; set; } = true;
-
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
-
-    public DateTime UpdatedAt { get; set; } = DateTime.Now;
-
-    public DateTime? LastLoginAt { get; set; }
-}
-
-public class ModuleGroup
+public class ModuleGroup : ISoftDelete
 {
     [Key]
     public int ModuleGroupId { get; set; }
@@ -117,9 +83,11 @@ public class ModuleGroup
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
+
+    public int IsDeletedTransaction { get; set; }
 }
 
-public class FieldMaster
+public class FieldMaster : ISoftDelete
 {
     [Key]
     public int FieldId { get; set; }
@@ -166,9 +134,13 @@ public class FieldMaster
     [MaxLength(500)]
     public string? HelpText { get; set; }
 
+    public bool IsDisplay { get; set; } = true;
+
     public DateTime CreatedAt { get; set; } = DateTime.Now;
 
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
+
+    public int IsDeletedTransaction { get; set; }
 }
 
 public class ProjectTeamMember
@@ -191,7 +163,7 @@ public class ProjectTeamMember
     public bool IsActive { get; set; } = true;
 }
 
-public class DynamicModuleData
+public class DynamicModuleData : ISoftDelete
 {
     [Key]
     [MaxLength(50)]
@@ -220,6 +192,8 @@ public class DynamicModuleData
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
     public int? UpdatedBy { get; set; }
+
+    public int IsDeletedTransaction { get; set; }
 }
 
 public class Comment

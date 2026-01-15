@@ -4,7 +4,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace MigraTrackAPI.Models;
 
 [Table("WebTables")]
-public class WebTable
+public class WebTable : ISoftDelete
 {
     [Key]
     public int WebTableId { get; set; }
@@ -12,6 +12,8 @@ public class WebTable
     [Required]
     [MaxLength(200)]
     public string TableName { get; set; } = string.Empty;
+
+    public int IsDeletedTransaction { get; set; }
 
     [MaxLength(200)]
     public string? DesktopTableName { get; set; }

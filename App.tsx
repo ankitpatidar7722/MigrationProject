@@ -49,7 +49,17 @@ const App: React.FC = () => {
     return saved ? saved === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
   });
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem('token'));
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<any>(() => {
+    try {
+      const savedUser = localStorage.getItem('user');
+      if (!savedUser || savedUser === 'undefined' || savedUser === 'null') return null;
+      return JSON.parse(savedUser);
+    } catch (e) {
+      console.warn('Failed to parse user from localStorage', e);
+      localStorage.removeItem('user'); // Clean up corrupt data
+      return null;
+    }
+  });
 
   useEffect(() => {
     if (isDarkMode) {
@@ -61,8 +71,20 @@ const App: React.FC = () => {
   }, [isDarkMode]);
 
   const toggleTheme = () => setIsDarkMode(!isDarkMode);
-  const handleLogin = () => { localStorage.setItem('token', 'mock'); setIsAuthenticated(true); };
-  const handleLogout = () => { localStorage.removeItem('token'); setIsAuthenticated(false); };
+
+  const handleLogin = (userData: any, token: string) => {
+    localStorage.setItem('token', token);
+    localStorage.setItem('user', JSON.stringify(userData));
+    setUser(userData);
+    setIsAuthenticated(true);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    setUser(null);
+    setIsAuthenticated(false);
+  };
 
   if (!isAuthenticated) return <Login onLogin={handleLogin} />;
 

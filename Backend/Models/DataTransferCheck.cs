@@ -3,10 +3,14 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MigraTrackAPI.Models;
 
-public class DataTransferCheck
+public class DataTransferCheck : ISoftDelete
 {
     [Key]
     public long TransferId { get; set; }
+
+    public bool IsTransferSuccessful { get; set; } = false;
+
+    public int IsDeletedTransaction { get; set; }
 
     [Required]
     public long ProjectId { get; set; }

@@ -15,6 +15,7 @@ const CustomizationPoints: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [saving, setSaving] = useState(false);
   const [editingItem, setEditingItem] = useState<CustomizationPoint | null>(null);
+  const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: number | null }>({ show: false, id: null });
 
   // Module Master State
   const [moduleMasters, setModuleMasters] = useState<ModuleMaster[]>([]);
@@ -102,10 +103,10 @@ const CustomizationPoints: React.FC = () => {
 
       const formData = new FormData(form);
 
-      const count = items.length + 1;
+      // const count = items.length + 1; // Unused
       const newItem: CustomizationPoint = {
         customizationId: 0, // Let backend generate
-        requirementId: `REQ-${count.toString().padStart(3, '0')}`,
+        requirementId: `REQ-${Date.now().toString().slice(-6)}`,
         projectId: projectId,
         moduleName: formData.get('moduleName') as string,
         subModuleName: formData.get('subModuleName') as string,
@@ -126,6 +127,21 @@ const CustomizationPoints: React.FC = () => {
       alert('Failed to save as new record. Please try again.');
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleDelete = (id: number) => {
+    setDeleteConfirm({ show: true, id });
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm.id) return;
+    try {
+      await api.customization.delete(deleteConfirm.id);
+      await loadItems();
+      setDeleteConfirm({ show: false, id: null });
+    } catch (err) {
+      console.error('Error deleting customization:', err);
     }
   };
 
@@ -209,8 +225,15 @@ const CustomizationPoints: React.FC = () => {
                   setEditingItem(item);
                   setSelectedModule(item.moduleName);
                   setShowModal(true);
-                }} className="p-1 text-slate-400 hover:text-amber-600 transition-colors">
+                }} className="p-1 text-slate-400 hover:text-amber-600 transition-colors" title="Edit">
                   <Edit3 size={16} />
+                </button>
+                <button
+                  onClick={() => handleDelete(item.customizationId)}
+                  className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                  title="Delete"
+                >
+                  <Trash2 size={16} />
                 </button>
               </div>
             </div>
@@ -347,6 +370,42 @@ const CustomizationPoints: React.FC = () => {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Confirmation Modal */}
+      {deleteConfirm.show && (
+        <div className="fixed inset-0 z-[70] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-sm rounded-2xl shadow-2xl overflow-hidden border border-slate-200 dark:border-zinc-800">
+            <div className="p-6">
+              <div className="flex items-center gap-4 mb-4">
+                <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center flex-shrink-0">
+                  <Trash2 size={24} className="text-red-600 dark:text-red-400" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Delete Requirement</h3>
+                  <p className="text-sm text-slate-500 dark:text-zinc-400">This action cannot be undone.</p>
+                </div>
+              </div>
+              <p className="text-slate-600 dark:text-zinc-300 mb-6 text-sm">
+                Are you sure you want to delete this customization point? It will be permanently removed.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setDeleteConfirm({ show: false, id: null })}
+                  className="flex-1 py-2.5 px-4 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl font-medium transition-colors text-sm"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={confirmDelete}
+                  className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all text-sm"
+                >
+                  Delete
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

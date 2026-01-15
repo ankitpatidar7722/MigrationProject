@@ -285,9 +285,16 @@ const ModuleMasterManager: React.FC = () => {
                                 <label className="block text-sm font-semibold mb-1.5">Group Index</label>
                                 <input
                                     type="number"
-                                    value={formData.groupIndex || 1}
-                                    onChange={(e) => setFormData({ ...formData, groupIndex: parseInt(e.target.value) || 1 })}
+                                    value={formData.groupIndex ?? ''}
+                                    onChange={(e) => {
+                                        const val = e.target.value;
+                                        setFormData({
+                                            ...formData,
+                                            groupIndex: val === '' ? undefined : parseInt(val)
+                                        });
+                                    }}
                                     className="w-full px-4 py-2.5 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                                    placeholder="Order # (e.g. 1)"
                                     min="1"
                                 />
                                 <p className="text-xs text-slate-500 mt-1">Used for sorting grouping order.</p>

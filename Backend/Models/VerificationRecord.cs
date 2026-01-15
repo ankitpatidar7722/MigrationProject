@@ -2,7 +2,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MigraTrackAPI.Models;
 
-public class VerificationRecord
+public class VerificationRecord : ISoftDelete
 {
     [Key]
     public long VerificationId { get; set; }
@@ -33,7 +33,9 @@ public class VerificationRecord
     [MaxLength(50)]
     public string Status { get; set; } = "Pending";
 
-    public bool IsVerified { get; set; }
+    public bool IsVerified { get; set; } = false;
+
+    public int IsDeletedTransaction { get; set; }
 
     [MaxLength(200)]
     public string? VerifiedBy { get; set; }

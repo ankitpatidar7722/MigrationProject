@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 
 namespace MigraTrackAPI.Models;
 
-public class MigrationIssue
+public class MigrationIssue : ISoftDelete
 {
     [Key]
     [MaxLength(50)]
@@ -14,6 +14,10 @@ public class MigrationIssue
 
     [Required]
     public long ProjectId { get; set; }
+
+    public bool IsResolved { get; set; } = false;
+
+    public int IsDeletedTransaction { get; set; }
 
     [MaxLength(200)]
     public string? ModuleName { get; set; }

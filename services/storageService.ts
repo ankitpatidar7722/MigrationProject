@@ -88,7 +88,7 @@ export const storageService = {
     }
   },
 
-  deleteTransferCheck: async (id: string): Promise<void> => {
+  deleteTransferCheck: async (id: any): Promise<void> => {
     try {
       await api.dataTransfer.delete(id);
     } catch (error) {
@@ -194,7 +194,7 @@ async function projectExists(id: number): Promise<boolean> {
   }
 }
 
-async function transferCheckExists(id: string): Promise<boolean> {
+async function transferCheckExists(id: any): Promise<boolean> {
   try {
     await api.dataTransfer.getById(id);
     return true;
@@ -203,7 +203,7 @@ async function transferCheckExists(id: string): Promise<boolean> {
   }
 }
 
-async function verificationExists(id: string): Promise<boolean> {
+async function verificationExists(id: any): Promise<boolean> {
   try {
     await api.verification.getById(id);
     return true;
@@ -212,7 +212,7 @@ async function verificationExists(id: string): Promise<boolean> {
   }
 }
 
-async function issueExists(id: string): Promise<boolean> {
+async function issueExists(id: any): Promise<boolean> {
   try {
     await api.issues.getById(id);
     return true;
@@ -221,7 +221,7 @@ async function issueExists(id: string): Promise<boolean> {
   }
 }
 
-async function customizationExists(id: string): Promise<boolean> {
+async function customizationExists(id: any): Promise<boolean> {
   try {
     await api.customization.getById(id);
     return true;

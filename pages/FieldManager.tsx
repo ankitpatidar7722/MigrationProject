@@ -81,6 +81,7 @@ const FieldManager: React.FC = () => {
       isActive: formData.get('isActive') === 'on',
       displayOrder: Number(formData.get('displayOrder')) || 0,
       defaultValue: formData.get('defaultValue'),
+      isDisplay: formData.get('isDisplay') === 'on',
       maxLength: Number(formData.get('maxLength')) || 0,
       selectQueryDb: formData.get('selectQueryDb'), // Used as Lookup Key
       validationRegex: formData.get('validationRegex'),
@@ -163,6 +164,7 @@ const FieldManager: React.FC = () => {
                       <th className="p-4 text-xs font-bold text-slate-500 uppercase">Name (DB)</th>
                       <th className="p-4 text-xs font-bold text-slate-500 uppercase">Type</th>
                       <th className="p-4 text-xs font-bold text-slate-500 uppercase">Required</th>
+                      <th className="p-4 text-xs font-bold text-slate-500 uppercase">Display</th>
                       <th className="p-4 text-xs font-bold text-slate-500 uppercase text-right">Actions</th>
                     </tr>
                   </thead>
@@ -179,6 +181,25 @@ const FieldManager: React.FC = () => {
                         </td>
                         <td className="p-4">
                           {field.isRequired && <Check size={16} className="text-emerald-500" />}
+                        </td>
+                        <td className="p-4">
+                          <input
+                            type="checkbox"
+                            checked={field.isDisplay !== false}
+                            onChange={async (e) => {
+                              const newDisplay = e.target.checked;
+                              // Optimistic UI update
+                              setFields(fields.map(f => f.fieldId === field.fieldId ? { ...f, isDisplay: newDisplay } : f));
+                              try {
+                                await api.fieldMaster.update(field.fieldId, { ...field, isDisplay: newDisplay });
+                              } catch (err) {
+                                console.error('Failed to update display status', err);
+                                // Revert on failure
+                                loadFields(selectedGroupId);
+                              }
+                            }}
+                            className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-slate-300 cursor-pointer"
+                          />
                         </td>
                         <td className="p-4 text-right space-x-2">
                           <button
@@ -273,6 +294,10 @@ const FieldManager: React.FC = () => {
                   <label className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" name="isActive" defaultChecked={editingField?.isActive ?? true} className="w-4 h-4" />
                     <span className="text-sm font-medium">Active</span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" name="isDisplay" defaultChecked={editingField?.isDisplay ?? true} className="w-4 h-4" />
+                    <span className="text-sm font-medium">Display on UI</span>
                   </label>
                 </div>
               </div>

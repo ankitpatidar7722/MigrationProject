@@ -93,5 +93,35 @@ public class MigraTrackDbContext : DbContext
             .WithMany()
             .HasForeignKey(e => e.ProjectId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // Apply Global Query Filter for parsing Soft Delete
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            if (typeof(ISoftDelete).IsAssignableFrom(entityType.ClrType))
+            {
+                var parameter = System.Linq.Expressions.Expression.Parameter(entityType.ClrType, "p");
+                var deletedProperty = System.Linq.Expressions.Expression.Property(parameter, "IsDeletedTransaction");
+                var comparison = System.Linq.Expressions.Expression.Equal(deletedProperty, System.Linq.Expressions.Expression.Constant(0));
+                var lambda = System.Linq.Expressions.Expression.Lambda(comparison, parameter);
+
+                modelBuilder.Entity(entityType.ClrType).HasQueryFilter(lambda);
+            }
+        }
+    }
+
+    public override Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+    {
+        foreach (var entry in ChangeTracker.Entries<ISoftDelete>())
+        {
+            switch (entry.State)
+            {
+                case EntityState.Deleted:
+                    entry.State = EntityState.Modified;
+                    entry.Entity.IsDeletedTransaction = 1;
+                    break;
+            }
+        }
+
+        return base.SaveChangesAsync(cancellationToken);
     }
 }

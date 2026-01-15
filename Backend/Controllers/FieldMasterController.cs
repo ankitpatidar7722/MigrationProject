@@ -93,6 +93,7 @@ public class FieldMasterController : ControllerBase
         existing.HelpText = field.HelpText;
         existing.IsUnique = field.IsUnique;
         existing.MaxLength = field.MaxLength;
+        existing.IsDisplay = field.IsDisplay;
         
         existing.UpdatedAt = DateTime.Now;
 

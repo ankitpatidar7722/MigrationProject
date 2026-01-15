@@ -1,25 +1,24 @@
-
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import {
-    Mail,
-    Plus,
-    Search,
-    Filter,
-    Download,
-    Calendar,
-    User,
-    Tag,
-    Paperclip,
-    MoreVertical,
-    Trash2,
-    Edit3,
-    X,
-    Upload,
-    ArrowLeft
-} from 'lucide-react'; // Assuming lucide-react is used
+    Mail, CheckCircle, AlertCircle, FileText,
+    Plus, Search, Filter, Trash2, Edit3, Loader2, ArrowLeft,
+    Calendar, User, Tag, Paperclip, MoreVertical, X, Upload
+} from 'lucide-react';
 import { api } from '../services/api';
 import { ProjectEmail, EmailCategory, Project } from '../types';
+
+const StatCard = ({ icon, label, value }: { icon: React.ReactNode, label: string, value: number }) => (
+    <div className="bg-white dark:bg-zinc-900 p-4 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-sm flex items-center gap-4">
+        <div className="p-3 bg-slate-50 dark:bg-zinc-800 rounded-lg">
+            {icon}
+        </div>
+        <div>
+            <p className="text-sm text-slate-500 dark:text-zinc-400">{label}</p>
+            <p className="text-2xl font-bold text-slate-900 dark:text-white">{value}</p>
+        </div>
+    </div>
+);
 
 const EmailDocumentation = () => {
     const { id } = useParams<{ id: string }>();
@@ -199,6 +198,12 @@ const EmailDocumentation = () => {
                         Email Documentation
                     </h1>
                     <p className="text-slate-500">Manage client approvals and communication records</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <StatCard icon={<Mail className="text-blue-600" />} label="Total Emails" value={emails.length} />
+                    <StatCard icon={<CheckCircle className="text-emerald-600" />} label="Approvals" value={emails.filter(e => e.category === 'Approval').length} />
+                    <StatCard icon={<AlertCircle className="text-orange-600" />} label="Clarifications" value={emails.filter(e => e.category === 'Clarification').length} />
+                    <StatCard icon={<FileText className="text-purple-600" />} label="Requirements" value={emails.filter(e => e.category === 'Requirement').length} />
                 </div>
                 <button
                     onClick={() => { resetForm(); setShowModal(true); }}

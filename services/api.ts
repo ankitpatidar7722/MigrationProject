@@ -15,9 +15,9 @@ import {
 /**
  * Complete API Service for MigraTrack Pro
  * Connects React Frontend to .NET Core Backend API
- * Backend URL: http://localhost:5000/api
+ * Backend URL: Configured via VITE_API_URL environment variable (default: localhost)
  */
-const BASE_URL = 'http://localhost:5000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
@@ -34,6 +34,19 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
 };
 
 export const api = {
+  // ==================== AUTH ====================
+  auth: {
+    login: async (credentials: any) => {
+      const response = await fetch(`${BASE_URL}/Auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(credentials),
+      });
+      return handleResponse<{ user: any, token: string }>(response);
+    },
+  },
+
   // ==================== PROJECTS ====================
   projects: {
     getAll: async (): Promise<Project[]> => {
@@ -91,7 +104,7 @@ export const api = {
       return handleResponse<DataTransferCheck[]>(response);
     },
 
-    get: async (id: number): Promise<DataTransferCheck> => {
+    getById: async (id: number): Promise<DataTransferCheck> => {
       const response = await fetch(`${BASE_URL}/DataTransfer/${id}`);
       return handleResponse<DataTransferCheck>(response);
     },

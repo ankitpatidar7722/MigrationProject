@@ -236,7 +236,10 @@ const VerificationList: React.FC = () => {
                   }} className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors">
                     <Edit3 size={18} />
                   </button>
-                  <button className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors">
+                  <button
+                    onClick={() => item.verificationId && handleDelete(item.verificationId)}
+                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  >
                     <Trash2 size={18} />
                   </button>
                 </div>
