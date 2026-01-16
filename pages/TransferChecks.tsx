@@ -2,8 +2,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
-import { DataTransferCheck, Status, ModuleMaster, WebTable } from '../types';
+import { DataTransferCheck, Status, ModuleMaster, WebTable, FieldMaster } from '../types';
 import { Plus, Search, Filter, Trash2, Edit3, Download, Check, Loader2, ArrowLeft } from 'lucide-react';
+import { useRefresh } from '../services/RefreshContext';
 
 const TransferChecks: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
@@ -23,17 +24,25 @@ const TransferChecks: React.FC = () => {
   const [webTables, setWebTables] = useState<WebTable[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>('');
 
+  // Field Master State
+  const [fields, setFields] = useState<FieldMaster[]>([]);
+
+  // Refresh Context
+  const { registerRefresh } = useRefresh();
+
   const loadItems = async () => {
     if (!projectId) return;
     try {
-      const [data, modules, tables] = await Promise.all([
+      const [data, modules, tables, fieldData] = await Promise.all([
         api.dataTransfer.getByProject(projectId),
         api.moduleMaster.getAll(),
-        api.webTables.getAll()
+        api.webTables.getAll(),
+        api.fieldMaster.getAll()
       ]);
       setItems(data);
       setModuleMasters(modules);
       setWebTables(tables);
+      setFields(fieldData);
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -43,7 +52,20 @@ const TransferChecks: React.FC = () => {
 
   useEffect(() => {
     loadItems();
-  }, [projectId]);
+    registerRefresh(loadItems);
+    return () => registerRefresh(() => { });
+  }, [projectId, registerRefresh]);
+
+  // Check if fields are required based on FieldMaster
+  const isDesktopTableRequired = useMemo(() => {
+    const field = fields.find(f => f.fieldName === 'tableNameDesktop');
+    return field ? field.isRequired : true; // Default to true if not found
+  }, [fields]);
+
+  const isWebTableRequired = useMemo(() => {
+    const field = fields.find(f => f.fieldName === 'tableNameWeb');
+    return field ? field.isRequired : true;
+  }, [fields]);
 
   useEffect(() => {
     if (editingItem) {
@@ -411,11 +433,14 @@ const TransferChecks: React.FC = () => {
                   <input name="condition" defaultValue={editingItem?.condition || ''} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="Optional filter condition..." />
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-1.5">Table Name (Desktop)</label>
+                  <label className="block text-sm font-semibold mb-1.5">
+                    Table Name (Desktop)
+                    {isDesktopTableRequired && <span className="text-red-500 ml-1">*</span>}
+                  </label>
                   <select
                     name="tableNameDesktop"
                     defaultValue={editingItem?.tableNameDesktop || ""}
-                    required
+                    required={isDesktopTableRequired}
                     disabled={!selectedModule}
                     className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-mono disabled:opacity-50"
                   >
@@ -426,11 +451,14 @@ const TransferChecks: React.FC = () => {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold mb-1.5">Table Name (Web)</label>
+                  <label className="block text-sm font-semibold mb-1.5">
+                    Table Name (Web)
+                    {isWebTableRequired && <span className="text-red-500 ml-1">*</span>}
+                  </label>
                   <select
                     name="tableNameWeb"
                     defaultValue={editingItem?.tableNameWeb || ""}
-                    required
+                    required={isWebTableRequired}
                     disabled={!selectedModule}
                     className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-mono disabled:opacity-50"
                   >

@@ -4,6 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { CustomizationPoint, CustomizationType, CustomizationStatus, ModuleMaster } from '../types';
 import { Plus, Search, Filter, Trash2, Edit3, Loader2, DollarSign, StickyNote, Tag, ArrowLeft } from 'lucide-react';
+import { useRefresh } from '../services/RefreshContext';
 
 const CustomizationPoints: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
@@ -20,6 +21,8 @@ const CustomizationPoints: React.FC = () => {
   // Module Master State
   const [moduleMasters, setModuleMasters] = useState<ModuleMaster[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>('');
+
+  const { registerRefresh } = useRefresh();
 
   const loadItems = async () => {
     if (!projectId) return;
@@ -39,7 +42,9 @@ const CustomizationPoints: React.FC = () => {
 
   useEffect(() => {
     loadItems();
-  }, [projectId]);
+    registerRefresh(loadItems);
+    return () => registerRefresh(() => { });
+  }, [projectId, registerRefresh]);
 
   useEffect(() => {
     if (editingItem) {

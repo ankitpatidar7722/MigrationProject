@@ -35,7 +35,8 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
     // Fetch Lookups
     useEffect(() => {
         const fetchLookups = async () => {
-            const lookupFields = fields.filter(f => f.dataType === 'select' && f.selectQueryDb);
+            // Fetch if SelectQueryDb is present, regardless of DataType
+            const lookupFields = fields.filter(f => f.selectQueryDb && f.selectQueryDb.length > 0);
             if (lookupFields.length === 0) return;
 
             setLoadingLookups(true);
@@ -75,10 +76,29 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
 
     const renderField = (field: FieldMaster) => {
         const commonClasses = "w-full px-4 py-2.5 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500 transition-all";
-        const labelClasses = "block text-sm font-semibold mb-1.5 text-slate-700 dark:text-slate-300";
 
-        switch (field.dataType) {
-            case 'textarea':
+        // Priority 1: If it has a Lookup Key, it's a Dropdown
+        if (field.selectQueryDb && field.selectQueryDb.length > 0) {
+            return (
+                <select
+                    name={field.fieldName}
+                    required={field.isRequired}
+                    value={formData[field.fieldName] || ''}
+                    onChange={(e) => handleChange(field.fieldName, e.target.value)}
+                    className={`${commonClasses} appearance-none bg-no-repeat bg-[right_1rem_center]`}
+                >
+                    <option value="">Select {field.fieldLabel}</option>
+                    {(lookups[field.selectQueryDb] || []).map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                    ))}
+                </select>
+            );
+        }
+
+        // Priority 2: Data Type Mapping
+        switch (field.dataType.toLowerCase()) {
+            case 'text': // Maps to Text Area
+            case 'textarea': // Legacy
                 return (
                     <textarea
                         name={field.fieldName}
@@ -90,23 +110,8 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
                     />
                 );
 
-            case 'select':
-                return (
-                    <select
-                        name={field.fieldName}
-                        required={field.isRequired}
-                        value={formData[field.fieldName] || ''}
-                        onChange={(e) => handleChange(field.fieldName, e.target.value)}
-                        className={`${commonClasses} appearance-none bg-no-repeat bg-[right_1rem_center]`}
-                    >
-                        <option value="">Select {field.fieldLabel}</option>
-                        {(lookups[field.selectQueryDb || ''] || []).map(opt => (
-                            <option key={opt.value} value={opt.value}>{opt.label}</option>
-                        ))}
-                    </select>
-                );
-
-            case 'checkbox':
+            case 'bit':
+            case 'checkbox': // Legacy support
                 return (
                     <label className="flex items-center gap-3 cursor-pointer p-2 bg-slate-50 dark:bg-zinc-800 rounded-xl border border-transparent hover:border-slate-200 dark:hover:border-zinc-700 transition-all">
                         <input
@@ -132,11 +137,41 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
                     />
                 );
 
-            // Default to text (includes 'text', 'email', 'number', etc.)
+            case 'datetime':
+                return (
+                    <input
+                        type="datetime-local"
+                        name={field.fieldName}
+                        required={field.isRequired}
+                        value={formData[field.fieldName] || ''}
+                        onChange={(e) => handleChange(field.fieldName, e.target.value)}
+                        className={commonClasses}
+                    />
+                );
+
+            case 'int':
+            case 'decimal':
+            case 'float':
+            case 'bigint':
+            case 'number': // Legacy support
+                return (
+                    <input
+                        type="number"
+                        step={field.dataType === 'int' ? '1' : '0.01'}
+                        name={field.fieldName}
+                        required={field.isRequired}
+                        placeholder={field.placeholderText || field.fieldLabel}
+                        value={formData[field.fieldName] || ''}
+                        onChange={(e) => handleChange(field.fieldName, e.target.value)}
+                        className={commonClasses}
+                    />
+                );
+
+            // Default to Text (nvarchar, varchar, etc.)
             default:
                 return (
                     <input
-                        type={field.dataType === 'number' ? 'number' : field.dataType === 'email' ? 'email' : 'text'}
+                        type="text"
                         name={field.fieldName}
                         required={field.isRequired}
                         placeholder={field.placeholderText || field.fieldLabel}
@@ -155,8 +190,8 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
                     .filter(f => f.isActive && f.isDisplay !== false)
                     .sort((a, b) => a.displayOrder - b.displayOrder)
                     .map(field => (
-                        <div key={field.fieldId} className={field.dataType === 'textarea' || field.dataType === 'checkbox' ? 'md:col-span-2' : ''}>
-                            {field.dataType !== 'checkbox' && (
+                        <div key={field.fieldId} className={(field.dataType === 'text' || field.dataType === 'textarea' || field.dataType === 'bit' || field.dataType === 'checkbox') ? 'md:col-span-2' : ''}>
+                            {(field.dataType !== 'bit' && field.dataType !== 'checkbox') && (
                                 <label className="block text-sm font-semibold mb-1.5 text-slate-700 dark:text-slate-300">
                                     {field.fieldLabel} {field.isRequired && <span className="text-red-500">*</span>}
                                 </label>

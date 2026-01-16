@@ -25,9 +25,8 @@ public class DataTransferCheck : ISoftDelete
     [MaxLength(500)]
     public string? Condition { get; set; }
 
-    [Required]
     [MaxLength(200)]
-    public string TableNameDesktop { get; set; } = string.Empty;
+    public string? TableNameDesktop { get; set; }
 
     [Required]
     [MaxLength(200)]

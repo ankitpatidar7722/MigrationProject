@@ -57,6 +57,8 @@ public class Project : ISoftDelete
     public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
     public int? UpdatedBy { get; set; }
+    
+    public int DisplayOrder { get; set; }
 
     public int IsDeletedTransaction { get; set; }
 }

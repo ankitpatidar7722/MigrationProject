@@ -63,11 +63,28 @@ const FieldManager: React.FC = () => {
     }
   };
 
+  // Helper to map UI Data Type to DB Data Type + MaxLength
+  const mapUiTypeToDb = (uiType: string, formMaxLength: number): { dataType: string; maxLength: number } => {
+    switch (uiType) {
+      case 'NVARCHAR(100)': return { dataType: 'nvarchar', maxLength: 100 };
+      case 'NVARCHAR(MAX)': return { dataType: 'text', maxLength: 0 }; // Using 'text' for long content as per schema implication
+      case 'INT': return { dataType: 'int', maxLength: 0 };
+      case 'DECIMAL(18,2)': return { dataType: 'decimal', maxLength: 0 };
+      case 'BIT': return { dataType: 'bit', maxLength: 0 };
+      case 'DATE': return { dataType: 'date', maxLength: 0 };
+      case 'DATETIME': return { dataType: 'datetime', maxLength: 0 };
+      default: return { dataType: 'nvarchar', maxLength: formMaxLength || 100 }; // Default fallback
+    }
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
     const form = e.target as HTMLFormElement;
     const formData = new FormData(form);
+
+    const uiDataType = formData.get('dataType') as string;
+    const { dataType, maxLength } = mapUiTypeToDb(uiDataType, Number(formData.get('maxLength')));
 
     const fieldData: any = {
       fieldId: editingField?.fieldId || 0,
@@ -75,15 +92,15 @@ const FieldManager: React.FC = () => {
       fieldName: formData.get('fieldName'),
       fieldLabel: formData.get('fieldLabel'),
       fieldDescription: formData.get('fieldDescription'),
-      dataType: formData.get('dataType'),
+      dataType: dataType,
+      maxLength: maxLength,
       isRequired: formData.get('isRequired') === 'on',
       isUnique: formData.get('isUnique') === 'on',
       isActive: formData.get('isActive') === 'on',
       displayOrder: Number(formData.get('displayOrder')) || 0,
       defaultValue: formData.get('defaultValue'),
       isDisplay: formData.get('isDisplay') === 'on',
-      maxLength: Number(formData.get('maxLength')) || 0,
-      selectQueryDb: formData.get('selectQueryDb'), // Used as Lookup Key
+      selectQueryDb: formData.get('selectQueryDb'),
       validationRegex: formData.get('validationRegex'),
       placeholderText: formData.get('placeholderText'),
       helpText: formData.get('helpText'),
@@ -101,6 +118,51 @@ const FieldManager: React.FC = () => {
     } catch (err) {
       console.error(err);
       alert('Failed to save field');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveAs = async (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+    setSaving(true);
+    const button = e.currentTarget;
+    const form = button.closest('form');
+    if (!form) return;
+
+    const formData = new FormData(form);
+    const uiDataType = formData.get('dataType') as string;
+    const { dataType, maxLength } = mapUiTypeToDb(uiDataType, Number(formData.get('maxLength')));
+
+    const fieldData: any = {
+      fieldId: 0, // Force new ID
+      moduleGroupId: selectedGroupId,
+      fieldName: formData.get('fieldName'),
+      fieldLabel: formData.get('fieldLabel'),
+      fieldDescription: formData.get('fieldDescription'),
+      dataType: dataType,
+      maxLength: maxLength,
+      isRequired: formData.get('isRequired') === 'on',
+      isUnique: formData.get('isUnique') === 'on',
+      isActive: formData.get('isActive') === 'on',
+      displayOrder: (Number(formData.get('displayOrder')) || 0) + 10,
+      defaultValue: formData.get('defaultValue'),
+      isDisplay: formData.get('isDisplay') === 'on',
+      selectQueryDb: formData.get('selectQueryDb'),
+      validationRegex: formData.get('validationRegex'),
+      placeholderText: formData.get('placeholderText'),
+      helpText: formData.get('helpText'),
+    };
+
+    try {
+      await api.fieldMaster.create(fieldData);
+      setShowModal(false);
+      setEditingField(null);
+      loadFields(selectedGroupId);
+      alert('Field cloned successfully!');
+    } catch (err) {
+      console.error(err);
+      alert('Failed to clone field');
     } finally {
       setSaving(false);
     }
@@ -252,14 +314,27 @@ const FieldManager: React.FC = () => {
 
                 <div>
                   <label className="block text-sm font-semibold mb-2">Data Type <span className="text-red-500">*</span></label>
-                  <select name="dataType" required defaultValue={editingField?.dataType || 'text'} className="w-full px-4 py-2 bg-slate-50 border rounded-lg">
-                    <option value="text">Text (Single Line)</option>
-                    <option value="textarea">Text Area (Multi Line)</option>
-                    <option value="number">Number</option>
-                    <option value="date">Date</option>
-                    <option value="email">Email</option>
-                    <option value="select">Dropdown (Select)</option>
-                    <option value="checkbox">Checkbox (Boolean)</option>
+                  <select
+                    name="dataType"
+                    required
+                    defaultValue={
+                      editingField?.dataType === 'text' ? 'NVARCHAR(MAX)' :
+                        editingField?.dataType === 'int' ? 'INT' :
+                          editingField?.dataType === 'bit' ? 'BIT' :
+                            editingField?.dataType === 'date' ? 'DATE' :
+                              editingField?.dataType === 'datetime' ? 'DATETIME' :
+                                editingField?.dataType === 'decimal' ? 'DECIMAL(18,2)' :
+                                  'NVARCHAR(100)' // Default to NVARCHAR(100) if nvarchar or unknown
+                    }
+                    className="w-full px-4 py-2 bg-slate-50 border rounded-lg"
+                  >
+                    <option value="NVARCHAR(100)">NVARCHAR(100) (Text)</option>
+                    <option value="NVARCHAR(MAX)">NVARCHAR(MAX) (Long Text)</option>
+                    <option value="INT">INT (Number)</option>
+                    <option value="DECIMAL(18,2)">DECIMAL(18,2) (Currency/Amount)</option>
+                    <option value="BIT">BIT (Checkbox/Boolean)</option>
+                    <option value="DATE">DATE</option>
+                    <option value="DATETIME">DATETIME</option>
                   </select>
                 </div>
                 <div>
@@ -275,7 +350,7 @@ const FieldManager: React.FC = () => {
                 <div>
                   <label className="block text-sm font-semibold mb-2">Lookup Key (for Dropdowns)</label>
                   <input name="selectQueryDb" defaultValue={editingField?.selectQueryDb || ''} className="w-full px-4 py-2 bg-slate-50 border rounded-lg" placeholder="e.g. ProjectType" />
-                  <p className="text-xs text-slate-500 mt-1">If type is 'select', use this key to fetch values.</p>
+                  <p className="text-xs text-slate-500 mt-1">If populated, this field will render as a Dropdown (regardless of Data Type).</p>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold mb-2">Default Value</label>
@@ -304,8 +379,20 @@ const FieldManager: React.FC = () => {
 
               <div className="p-6 border-t border-slate-100 bg-slate-50 flex justify-end gap-3 sticky bottom-0">
                 <button type="button" onClick={() => setShowModal(false)} className="px-5 py-2.5 rounded-lg border bg-white hover:bg-slate-50">Cancel</button>
-                <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium shadow-lg shadow-blue-500/20">
-                  {saving ? 'Saving...' : 'Save Field'}
+
+                {editingField && (
+                  <button
+                    type="button"
+                    onClick={handleSaveAs}
+                    disabled={saving}
+                    className="px-5 py-2.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 font-medium shadow-lg shadow-emerald-500/20 disabled:opacity-50"
+                  >
+                    {saving ? 'Saving...' : 'Save As New'}
+                  </button>
+                )}
+
+                <button type="submit" disabled={saving} className="px-5 py-2.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 font-medium shadow-lg shadow-blue-500/20 disabled:opacity-50">
+                  {saving ? 'Saving...' : (editingField ? 'Update Field' : 'Save Field')}
                 </button>
               </div>
             </form>

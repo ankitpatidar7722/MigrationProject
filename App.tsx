@@ -40,6 +40,22 @@ import CustomizationPoints from './pages/CustomizationPoints';
 import EmailDocumentation from './pages/EmailDocumentation';
 import { api } from './services/api';
 import { ModuleMaster } from './types';
+import { RefreshProvider, useRefresh } from './services/RefreshContext';
+import { RotateCw } from 'lucide-react';
+
+const RefreshButton: React.FC = () => {
+  const { triggerRefresh, isRefreshing } = useRefresh();
+  return (
+    <button
+      onClick={triggerRefresh}
+      disabled={isRefreshing}
+      className={`p-2 rounded-full hover:bg-white/10 text-white/70 hover:text-white transition-all ${isRefreshing ? 'animate-spin' : ''}`}
+      title="Refresh Page Data"
+    >
+      <RotateCw size={18} />
+    </button>
+  );
+};
 
 export const AppContext = React.createContext<any>(null);
 
@@ -90,29 +106,31 @@ const App: React.FC = () => {
 
   return (
     <AppContext.Provider value={{ isDarkMode, toggleTheme, user, handleLogout }}>
-      <HashRouter>
-        <Layout>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/projects" element={<ProjectList />} />
-            <Route path="/emails" element={<EmailDocumentation />} />
-            <Route path="/projects/:projectId" element={<ProjectDetail />} />
+      <RefreshProvider>
+        <HashRouter>
+          <Layout>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/projects" element={<ProjectList />} />
+              <Route path="/emails" element={<EmailDocumentation />} />
+              <Route path="/projects/:projectId" element={<ProjectDetail />} />
 
-            {/* Module Pages */}
-            <Route path="/projects/:projectId/transfer" element={<TransferChecks />} />
-            <Route path="/projects/:projectId/verification" element={<VerificationList />} />
-            <Route path="/projects/:projectId/issues" element={<MigrationIssues />} />
-            <Route path="/projects/:projectId/customization" element={<CustomizationPoints />} />
-            <Route path="/projects/:projectId/emails" element={<EmailDocumentation />} />
-            <Route path="/admin/fields" element={<FieldManager />} />
-            <Route path="/admin/modules" element={<ModuleMasterManager />} />
-            <Route path="/admin/webtables" element={<WebTableManager />} />
-            <Route path="/projects/:projectId/module/:moduleName" element={<DynamicModulePage />} />
+              {/* Module Pages */}
+              <Route path="/projects/:projectId/transfer" element={<TransferChecks />} />
+              <Route path="/projects/:projectId/verification" element={<VerificationList />} />
+              <Route path="/projects/:projectId/issues" element={<MigrationIssues />} />
+              <Route path="/projects/:projectId/customization" element={<CustomizationPoints />} />
+              <Route path="/projects/:projectId/emails" element={<EmailDocumentation />} />
+              <Route path="/admin/fields" element={<FieldManager />} />
+              <Route path="/admin/modules" element={<ModuleMasterManager />} />
+              <Route path="/admin/webtables" element={<WebTableManager />} />
+              <Route path="/projects/:projectId/module/:moduleName" element={<DynamicModulePage />} />
 
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-        </Layout>
-      </HashRouter>
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Routes>
+          </Layout>
+        </HashRouter>
+      </RefreshProvider>
     </AppContext.Provider>
   );
 };
@@ -285,6 +303,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
                 className="pl-9 pr-4 py-1.5 bg-[#1a3b66] border border-transparent focus:border-blue-400 rounded text-sm text-white placeholder-white/50 outline-none w-64 transition-all"
               />
             </div>
+            <RefreshButton />
             <div className="w-8 h-8 rounded-full bg-blue-500 flex items-center justify-center text-xs font-bold ring-2 ring-white/20">
               A
             </div>

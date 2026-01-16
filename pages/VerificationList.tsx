@@ -2,8 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
-import { VerificationRecord, VerificationStatus, ModuleMaster } from '../types';
+import { VerificationRecord, VerificationStatus, ModuleMaster, FieldMaster, WebTable } from '../types';
 import { Plus, Search, Filter, Trash2, Edit3, Download, Check, Code, MessageSquare, Info, ShieldCheck, Loader2, Copy, ArrowLeft } from 'lucide-react';
+import { useRefresh } from '../services/RefreshContext';
 
 const VerificationList: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
@@ -18,19 +19,28 @@ const VerificationList: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<VerificationStatus>('Pending');
   const [deleteConfirm, setDeleteConfirm] = useState<{ show: boolean; id: number | null }>({ show: false, id: null });
 
-  // Module Master State
   const [moduleMasters, setModuleMasters] = useState<ModuleMaster[]>([]);
+  const [webTables, setWebTables] = useState<WebTable[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>('');
+  const [selectedDesktopTable, setSelectedDesktopTable] = useState<string>('');
+  const [selectedWebTable, setSelectedWebTable] = useState<string>('');
+  const [fields, setFields] = useState<FieldMaster[]>([]);
+
+  const { registerRefresh } = useRefresh();
 
   const loadItems = async () => {
     if (!projectId) return;
     try {
-      const [data, modules] = await Promise.all([
+      const [data, modules, fieldData, tables] = await Promise.all([
         api.verification.getByProject(projectId),
-        api.moduleMaster.getAll()
+        api.moduleMaster.getAll(),
+        api.fieldMaster.getAll(),
+        api.webTables.getAll()
       ]);
       setItems(data);
       setModuleMasters(modules);
+      setFields(fieldData);
+      setWebTables(tables);
     } catch (err) {
       console.error('Error loading data:', err);
     } finally {
@@ -40,13 +50,19 @@ const VerificationList: React.FC = () => {
 
   useEffect(() => {
     loadItems();
-  }, [projectId]);
+    registerRefresh(loadItems);
+    return () => registerRefresh(() => { });
+  }, [projectId, registerRefresh]);
 
   useEffect(() => {
     if (editingItem) {
       setSelectedModule(editingItem.moduleName);
+      setSelectedDesktopTable(editingItem.tableNameDesktop || '');
+      setSelectedWebTable(editingItem.tableNameWeb || '');
     } else {
       setSelectedModule('');
+      setSelectedDesktopTable('');
+      setSelectedWebTable('');
     }
   }, [editingItem]);
 
@@ -54,6 +70,19 @@ const VerificationList: React.FC = () => {
   const availableSubModules = moduleMasters
     .filter(m => m.moduleName === selectedModule)
     .map(m => m.subModuleName);
+
+  // Filter Web Tables based on selected Module's GroupIndex (Borrowed from TransferChecks)
+  const availableTables = React.useMemo(() => {
+    if (!selectedModule) return [];
+    // Find the group index of the selected module
+    const moduleInfo = moduleMasters.find(m => m.moduleName === selectedModule);
+    if (!moduleInfo || moduleInfo.groupIndex === undefined) return [];
+    return webTables.filter(t => t.groupIndex === moduleInfo.groupIndex);
+  }, [selectedModule, moduleMasters, webTables]);
+
+  const distinctDesktopTables = Array.from(new Set(availableTables.map(t => t.desktopTableName).filter(Boolean)));
+  const distinctWebTables = Array.from(new Set(availableTables.map(t => t.tableName).filter(Boolean)));
+
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -63,11 +92,13 @@ const VerificationList: React.FC = () => {
       const formData = new FormData(form);
 
       const itemData: VerificationRecord = {
-        verificationId: editingItem?.verificationId, // Undefined for new items
+        verificationId: editingItem?.verificationId,
         projectId: projectId,
         moduleName: formData.get('moduleName') as string,
         subModuleName: formData.get('subModuleName') as string,
         fieldName: formData.get('fieldName') as string,
+        tableNameDesktop: formData.get('tableNameDesktop') as string,
+        tableNameWeb: formData.get('tableNameWeb') as string,
         description: formData.get('description') as string,
         status: selectedStatus,
         sqlQuery: formData.get('sqlQuery') as string,
@@ -111,6 +142,8 @@ const VerificationList: React.FC = () => {
         moduleName: formData.get('moduleName') as string,
         subModuleName: formData.get('subModuleName') as string,
         fieldName: formData.get('fieldName') as string,
+        tableNameDesktop: formData.get('tableNameDesktop') as string,
+        tableNameWeb: formData.get('tableNameWeb') as string,
         description: formData.get('description') as string,
         status: selectedStatus,
         sqlQuery: formData.get('sqlQuery') as string,
@@ -165,17 +198,6 @@ const VerificationList: React.FC = () => {
     i.fieldName.toLowerCase().includes(search.toLowerCase())
   );
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <p className="text-slate-500 dark:text-zinc-400">Loading verifications...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -225,6 +247,10 @@ const VerificationList: React.FC = () => {
                     <span className="text-xs font-semibold text-slate-400 uppercase tracking-widest">{item.moduleName} / {item.subModuleName}</span>
                   </div>
                   <h3 className="text-lg font-bold">{item.fieldName}</h3>
+                  <div className="flex gap-4 mt-2 mb-2 text-xs font-mono text-slate-500">
+                    {item.tableNameDesktop && <span className="bg-slate-100 px-2 py-1 rounded">DT: {item.tableNameDesktop}</span>}
+                    {item.tableNameWeb && <span className="bg-blue-50 text-blue-700 px-2 py-1 rounded">WT: {item.tableNameWeb}</span>}
+                  </div>
                   <p className="text-sm text-slate-600 dark:text-zinc-400 mt-1">{item.description}</p>
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
@@ -254,7 +280,7 @@ const VerificationList: React.FC = () => {
                     </div>
                     <CopyButton text={item.sqlQuery} />
                   </div>
-                  <pre className="text-xs font-mono text-slate-700 dark:text-zinc-300 overflow-x-auto notion-scrollbar whitespace-pre-wrap">
+                  <pre className="text-xs font-mono text-slate-700 dark:text-zinc-300 overflow-x-auto whitespace-pre-wrap">
                     {item.sqlQuery}
                   </pre>
                 </div>
@@ -285,7 +311,6 @@ const VerificationList: React.FC = () => {
         )}
       </div>
 
-      {/* Modal */}
       {showModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm overflow-y-auto">
           <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden my-auto">
@@ -328,9 +353,55 @@ const VerificationList: React.FC = () => {
                   </select>
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">Desktop Table</label>
+                  <select
+                    name="tableNameDesktop"
+                    defaultValue={editingItem?.tableNameDesktop || ""}
+                    disabled={!selectedModule}
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-mono disabled:opacity-50"
+                  >
+                    <option value="" disabled hidden>Select Desktop Table</option>
+                    {distinctDesktopTables.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-semibold mb-1.5">Web Table</label>
+                  <select
+                    name="tableNameWeb"
+                    defaultValue={editingItem?.tableNameWeb || ""}
+                    disabled={!selectedModule}
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-mono disabled:opacity-50"
+                  >
+                    <option value="" disabled hidden>Select Web Table</option>
+                    {distinctWebTables.map(t => (
+                      <option key={t} value={t}>{t}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
               <div>
                 <label className="block text-sm font-semibold mb-1.5">Field/Logic Name</label>
-                <input name="fieldName" defaultValue={editingItem?.fieldName} required className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none" placeholder="e.g. Calculated Tax Total" />
+                <div className="relative">
+                  <input
+                    name="fieldName"
+                    list="verification-fields"
+                    defaultValue={editingItem?.fieldName}
+                    required
+                    className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
+                    placeholder="e.g. Calculated Tax Total"
+                  />
+                  <datalist id="verification-fields">
+                    {fields.filter(f => f.moduleGroupId === 1002 && f.isDisplay !== false).map(f => (
+                      <option key={f.fieldId} value={f.fieldLabel} />
+                    ))}
+                  </datalist>
+                </div>
               </div>
               <div>
                 <label className="block text-sm font-semibold mb-1.5">Description/Notes</label>
@@ -374,7 +445,6 @@ const VerificationList: React.FC = () => {
         </div>
       )}
 
-      {/* Delete Confirmation Modal */}
       {deleteConfirm.show && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800">

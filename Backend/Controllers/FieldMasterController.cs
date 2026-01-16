@@ -71,34 +71,44 @@ public class FieldMasterController : ControllerBase
     [HttpPut("{id}")]
     public async Task<IActionResult> Update(int id, FieldMaster field)
     {
-        if (id != field.FieldId)
-            return BadRequest();
+        try
+        {
+            if (id != field.FieldId)
+                return BadRequest();
 
-        var existing = await _context.FieldMaster.FindAsync(id);
-        if (existing == null)
-            return NotFound();
+            var existing = await _context.FieldMaster.FindAsync(id);
+            if (existing == null)
+                return NotFound();
 
-        existing.FieldName = field.FieldName;
-        existing.FieldLabel = field.FieldLabel;
-        existing.FieldDescription = field.FieldDescription;
-        existing.DataType = field.DataType;
-        existing.IsRequired = field.IsRequired;
-        existing.DefaultValue = field.DefaultValue;
-        existing.SelectQueryDb = field.SelectQueryDb;
-        existing.DisplayOrder = field.DisplayOrder;
-        
-        // New fields
-        existing.ValidationRegex = field.ValidationRegex;
-        existing.PlaceholderText = field.PlaceholderText;
-        existing.HelpText = field.HelpText;
-        existing.IsUnique = field.IsUnique;
-        existing.MaxLength = field.MaxLength;
-        existing.IsDisplay = field.IsDisplay;
-        
-        existing.UpdatedAt = DateTime.Now;
+            existing.FieldName = field.FieldName;
+            existing.FieldLabel = field.FieldLabel;
+            existing.FieldDescription = field.FieldDescription;
+            existing.DataType = field.DataType;
+            existing.IsRequired = field.IsRequired;
+            existing.DefaultValue = field.DefaultValue;
+            existing.SelectQueryDb = field.SelectQueryDb;
+            existing.DisplayOrder = field.DisplayOrder;
+            
+            // New fields
+            existing.ValidationRegex = field.ValidationRegex;
+            existing.PlaceholderText = field.PlaceholderText;
+            existing.HelpText = field.HelpText;
+            existing.IsUnique = field.IsUnique;
+            existing.MaxLength = field.MaxLength;
+            existing.IsDisplay = field.IsDisplay;
+            
+            existing.UpdatedAt = DateTime.Now;
 
-        await _context.SaveChangesAsync();
-        return Ok(existing);
+            await _context.SaveChangesAsync();
+            return Ok(existing);
+        }
+        catch (Exception ex)
+        {
+            var logPath = Path.Combine(Directory.GetCurrentDirectory(), "debug_field_error.log");
+            var errorLog = $"{DateTime.Now}: Update Error: {ex.Message}\nInner: {ex.InnerException?.Message}\nStack: {ex.StackTrace}\n";
+            System.IO.File.AppendAllText(logPath, errorLog);
+            return StatusCode(500, $"Internal Server Error: {ex.Message}");
+        }
     }
 
     [HttpGet("lookup/{type}")]

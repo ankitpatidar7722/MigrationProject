@@ -14,6 +14,7 @@ public interface IProjectService
     Task<bool> DeleteProjectAsync(long id);
     Task<object> GetProjectDashboardAsync(long projectId);
     Task<bool> CloneProjectDataAsync(long sourceProjectId, long targetProjectId);
+    Task<bool> UpdateProjectDisplayOrdersAsync(List<Project> projects);
 }
 
 public class ProjectService : IProjectService
@@ -29,7 +30,8 @@ public class ProjectService : IProjectService
     {
         return await _context.Projects
             .Where(p => p.IsActive)
-            .OrderByDescending(p => p.CreatedAt)
+            .OrderBy(p => p.DisplayOrder) // Changed to order by DisplayOrder
+            .ThenByDescending(p => p.CreatedAt) // Fallback
             .ToListAsync();
     }
 
@@ -43,6 +45,10 @@ public class ProjectService : IProjectService
         project.CreatedAt = DateTime.Now;
         project.UpdatedAt = DateTime.Now;
         
+        // Auto-increment DisplayOrder logic moved here
+        var maxOrder = await _context.Projects.MaxAsync(p => (int?)p.DisplayOrder) ?? 0;
+        project.DisplayOrder = maxOrder + 1;
+
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
         
@@ -66,6 +72,7 @@ public class ProjectService : IProjectService
         existing.TechnicalLead = project.TechnicalLead;
         existing.ImplementationCoordinator = project.ImplementationCoordinator;
         existing.CoordinatorEmail = project.CoordinatorEmail;
+        existing.DisplayOrder = project.DisplayOrder; // Update DisplayOrder
         existing.UpdatedAt = DateTime.Now;
 
         await _context.SaveChangesAsync();
@@ -209,6 +216,30 @@ public class ProjectService : IProjectService
             await transaction.RollbackAsync();
             // Log exception here conceptually
             throw; 
+        }
+    }
+
+    public async Task<bool> UpdateProjectDisplayOrdersAsync(List<Project> projects)
+    {
+        using var transaction = await _context.Database.BeginTransactionAsync();
+        try
+        {
+            foreach (var project in projects)
+            {
+                var existing = await _context.Projects.FindAsync(project.ProjectId);
+                if (existing != null)
+                {
+                    existing.DisplayOrder = project.DisplayOrder;
+                }
+            }
+            await _context.SaveChangesAsync();
+            await transaction.CommitAsync();
+            return true;
+        }
+        catch (Exception)
+        {
+            await transaction.RollbackAsync();
+            return false;
         }
     }
 }

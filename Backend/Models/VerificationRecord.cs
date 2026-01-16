@@ -21,6 +21,12 @@ public class VerificationRecord : ISoftDelete
     [MaxLength(200)]
     public string FieldName { get; set; } = string.Empty;
 
+    [MaxLength(200)]
+    public string? TableNameDesktop { get; set; }
+
+    [MaxLength(200)]
+    public string? TableNameWeb { get; set; }
+
     public string? Description { get; set; }
 
     public string? SqlQuery { get; set; }

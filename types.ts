@@ -1,6 +1,6 @@
 
 
-export type DataType = 'int' | 'varchar' | 'text' | 'date' | 'bit' | 'dropdown' | 'textarea' | 'number' | 'email' | 'select' | 'checkbox';
+export type DataType = 'nvarchar' | 'text' | 'int' | 'bit' | 'date' | 'datetime' | 'decimal' | 'float' | 'bigint' | 'varchar' | 'dropdown' | 'select' | 'checkbox' | 'number' | 'email' | 'textarea'; // SQL native types + legacy frontend types
 
 /**
  * Maps directly to FieldMaster table in MS SQL Server
@@ -44,6 +44,7 @@ export interface Project {
   isActive: boolean;
   createdAt: string;
   updatedAt?: string;
+  displayOrder: number;
 }
 
 export interface ModuleGroup {
@@ -99,6 +100,8 @@ export interface VerificationRecord {
   moduleName: string;
   subModuleName: string;
   fieldName: string;
+  tableNameDesktop?: string;
+  tableNameWeb?: string;
   description: string;
   sqlQuery: string;
   expectedResult: string;

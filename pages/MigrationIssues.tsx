@@ -4,6 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { MigrationIssue, IssueStatus, ModuleMaster } from '../types';
 import { Plus, Search, Filter, AlertCircle, Clock, CheckCircle, XCircle, MoreVertical, Loader2, ArrowLeft, Edit3, Trash2 } from 'lucide-react';
+import { useRefresh } from '../services/RefreshContext';
 
 const MigrationIssues: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
@@ -20,6 +21,8 @@ const MigrationIssues: React.FC = () => {
   // Module Master State
   const [moduleMasters, setModuleMasters] = useState<ModuleMaster[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>('');
+
+  const { registerRefresh } = useRefresh();
 
   const loadIssues = async () => {
     if (!projectId) return;
@@ -39,7 +42,9 @@ const MigrationIssues: React.FC = () => {
 
   useEffect(() => {
     loadIssues();
-  }, [projectId]);
+    registerRefresh(loadIssues);
+    return () => registerRefresh(() => { });
+  }, [projectId, registerRefresh]);
 
   useEffect(() => {
     if (editingIssue) {

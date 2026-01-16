@@ -95,6 +95,15 @@ export const api = {
       });
       return handleResponse<void>(response);
     },
+
+    reorder: async (projects: Project[]): Promise<void> => {
+      const response = await fetch(`${BASE_URL}/Projects/reorder`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(projects),
+      });
+      return handleResponse<void>(response);
+    },
   },
 
   // ==================== DATA TRANSFER CHECKS ====================

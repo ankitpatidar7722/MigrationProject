@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { ModuleMaster } from '../types';
 import { Plus, Search, Trash2, Edit3, Loader2, Save, X, Database, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useRefresh } from '../services/RefreshContext';
 
 const ModuleMasterManager: React.FC = () => {
     const [modules, setModules] = useState<ModuleMaster[]>([]);
@@ -21,6 +22,8 @@ const ModuleMasterManager: React.FC = () => {
         groupIndex: 1
     });
 
+    const { registerRefresh } = useRefresh();
+
     const loadModules = async () => {
         try {
             const data = await api.moduleMaster.getAll();
@@ -34,7 +37,9 @@ const ModuleMasterManager: React.FC = () => {
 
     useEffect(() => {
         loadModules();
-    }, []);
+        registerRefresh(loadModules);
+        return () => registerRefresh(() => { });
+    }, [registerRefresh]);
 
     const handleEdit = (module: ModuleMaster) => {
         setEditingModule(module);
@@ -308,6 +313,44 @@ const ModuleMasterManager: React.FC = () => {
                                 >
                                     Cancel
                                 </button>
+                                {editingModule && (
+                                    <button
+                                        type="button"
+                                        onClick={async () => {
+                                            if (!formData.moduleName || !formData.subModuleName) {
+                                                alert('Module Name and Sub Module Name are required.');
+                                                return;
+                                            }
+
+                                            setSaving(true);
+                                            try {
+                                                const payload: ModuleMaster = {
+                                                    moduleId: 0, // Force new ID
+                                                    moduleName: formData.moduleName,
+                                                    subModuleName: formData.subModuleName,
+                                                    groupIndex: formData.groupIndex || 1
+                                                };
+
+                                                await api.moduleMaster.create(payload);
+
+                                                await loadModules();
+                                                setShowModal(false);
+                                                setEditingModule(null);
+                                                setFormData({ moduleName: '', subModuleName: '', groupIndex: 1 });
+                                            } catch (err) {
+                                                console.error('Error saving module as new:', err);
+                                                alert('Failed to save module as new.');
+                                            } finally {
+                                                setSaving(false);
+                                            }
+                                        }}
+                                        disabled={saving}
+                                        className="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-medium shadow-sm transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                    >
+                                        {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                                        Save As New
+                                    </button>
+                                )}
                                 <button
                                     type="submit"
                                     disabled={saving}
