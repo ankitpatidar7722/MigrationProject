@@ -311,7 +311,7 @@ const ProjectDetail: React.FC = () => {
                 value={targetProject}
                 onChange={(e) => setTargetProject(e.target.value)}
               >
-                <option value="">Select Target Project...</option>
+                <option value="" disabled hidden>Select Target Project...</option>
                 {allProjects.map(p => (
                   <option key={p.projectId} value={p.projectId}>{p.clientName}</option>
                 ))}

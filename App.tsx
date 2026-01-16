@@ -22,7 +22,8 @@ import {
   ShoppingBag,
   Folder,
   Mail,
-  Table
+  Table,
+  Server
 } from 'lucide-react';
 
 import Dashboard from './pages/Dashboard';
@@ -31,7 +32,9 @@ import ProjectDetail from './pages/ProjectDetail';
 import DynamicModulePage from './pages/DynamicModulePage';
 import ModuleMasterManager from './pages/ModuleMasterManager';
 import WebTableManager from './pages/WebTableManager';
+
 import FieldManager from './pages/FieldManager';
+import DatabaseManager from './pages/DatabaseManager';
 import Login from './pages/Login';
 import TransferChecks from './pages/TransferChecks';
 import VerificationList from './pages/VerificationList';
@@ -123,7 +126,9 @@ const App: React.FC = () => {
               <Route path="/projects/:projectId/emails" element={<EmailDocumentation />} />
               <Route path="/admin/fields" element={<FieldManager />} />
               <Route path="/admin/modules" element={<ModuleMasterManager />} />
+
               <Route path="/admin/webtables" element={<WebTableManager />} />
+              <Route path="/admin/databases" element={<DatabaseManager />} />
               <Route path="/projects/:projectId/module/:moduleName" element={<DynamicModulePage />} />
 
               <Route path="*" element={<Navigate to="/" replace />} />
@@ -257,6 +262,10 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           <Link to="/admin/webtables" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${location.pathname === '/admin/webtables' ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
             <Table size={20} />
             <span className="text-[10px] mt-1 font-medium">Tables</span>
+          </Link>
+          <Link to="/admin/databases" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${location.pathname === '/admin/databases' ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+            <Server size={20} />
+            <span className="text-[10px] mt-1 font-medium">Databases</span>
           </Link>
 
           {/* Project Specific Modules */}

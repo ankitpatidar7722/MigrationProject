@@ -36,6 +36,8 @@ public class MigraTrackDbContext : DbContext
     public DbSet<ProjectMilestone> ProjectMilestones { get; set; }
     public DbSet<LookupData> LookupData { get; set; }
     public DbSet<ModuleMaster> ModuleMasters { get; set; }
+    public DbSet<ServerData> ServerData { get; set; }
+    public DbSet<DatabaseDetail> DatabaseDetails { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -59,6 +61,8 @@ public class MigraTrackDbContext : DbContext
         modelBuilder.Entity<ProjectMilestone>().ToTable("ProjectMilestones");
         modelBuilder.Entity<LookupData>().ToTable("LookupData");
         modelBuilder.Entity<ModuleMaster>().ToTable("ModuleMaster");
+        modelBuilder.Entity<ServerData>().ToTable("ServerData");
+        modelBuilder.Entity<DatabaseDetail>().ToTable("DatabaseDetail");
 
         // Configure relationships and constraints
         modelBuilder.Entity<Project>()

@@ -199,4 +199,21 @@ export interface WebTable {
   createdAt?: string;
 }
 
+export interface ServerData {
+  serverId: number;
+  serverName: string;
+  hostName: string;
+  serverIndex: string;
+}
+
+export interface DatabaseDetail {
+  databaseId: number;
+  databaseName: string;
+  serverId: number;
+  serverIndex: string;
+  clientName: string;
+  databaseCategory?: string;
+  server?: ServerData;
+}
+
 

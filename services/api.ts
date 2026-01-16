@@ -9,7 +9,9 @@ import {
   CustomizationPoint,
   ModuleMaster,
   ProjectEmail,
-  WebTable
+  WebTable,
+  ServerData,
+  DatabaseDetail
 } from '../types';
 
 /**
@@ -34,6 +36,77 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
 };
 
 export const api = {
+  // ==================== SERVERS & DATABASES ====================
+  serverData: {
+    getAll: async (): Promise<ServerData[]> => {
+      const response = await fetch(`${BASE_URL}/ServerData`);
+      return handleResponse<ServerData[]>(response);
+    },
+    getById: async (id: number): Promise<ServerData> => {
+      const response = await fetch(`${BASE_URL}/ServerData/${id}`);
+      return handleResponse<ServerData>(response);
+    },
+    create: async (item: ServerData): Promise<ServerData> => {
+      const response = await fetch(`${BASE_URL}/ServerData`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+      });
+      return handleResponse<ServerData>(response);
+    },
+    update: async (id: number, item: ServerData): Promise<ServerData> => {
+      const response = await fetch(`${BASE_URL}/ServerData/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+      });
+      return handleResponse<ServerData>(response);
+    },
+    delete: async (id: number): Promise<void> => {
+      const response = await fetch(`${BASE_URL}/ServerData/${id}`, {
+        method: 'DELETE'
+      });
+      return handleResponse<void>(response);
+    }
+  },
+
+  databaseDetails: {
+    getAll: async (): Promise<DatabaseDetail[]> => {
+      const response = await fetch(`${BASE_URL}/DatabaseDetail`);
+      return handleResponse<DatabaseDetail[]>(response);
+    },
+    getByServer: async (serverId: number): Promise<DatabaseDetail[]> => {
+      const response = await fetch(`${BASE_URL}/DatabaseDetail/server/${serverId}`);
+      return handleResponse<DatabaseDetail[]>(response);
+    },
+    getById: async (id: number): Promise<DatabaseDetail> => {
+      const response = await fetch(`${BASE_URL}/DatabaseDetail/${id}`);
+      return handleResponse<DatabaseDetail>(response);
+    },
+    create: async (item: DatabaseDetail): Promise<DatabaseDetail> => {
+      const response = await fetch(`${BASE_URL}/DatabaseDetail`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+      });
+      return handleResponse<DatabaseDetail>(response);
+    },
+    update: async (id: number, item: DatabaseDetail): Promise<DatabaseDetail> => {
+      const response = await fetch(`${BASE_URL}/DatabaseDetail/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+      });
+      return handleResponse<DatabaseDetail>(response);
+    },
+    delete: async (id: number): Promise<void> => {
+      const response = await fetch(`${BASE_URL}/DatabaseDetail/${id}`, {
+        method: 'DELETE'
+      });
+      return handleResponse<void>(response);
+    }
+  },
+
   // ==================== AUTH ====================
   auth: {
     login: async (credentials: any) => {

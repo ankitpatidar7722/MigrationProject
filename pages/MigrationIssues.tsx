@@ -327,7 +327,7 @@ const MigrationIssues: React.FC = () => {
                       required
                       className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none"
                     >
-                      <option value="">Select Module</option>
+                      <option value="" disabled hidden>Select Module</option>
                       {uniqueModules.map(m => (
                         <option key={m} value={m}>{m}</option>
                       ))}
@@ -342,7 +342,7 @@ const MigrationIssues: React.FC = () => {
                       disabled={!selectedModule}
                       className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none disabled:opacity-50"
                     >
-                      <option value="">Select Sub-Module</option>
+                      <option value="" disabled hidden>Select Sub-Module</option>
                       {availableSubModules.map(sm => (
                         <option key={sm} value={sm}>{sm}</option>
                       ))}

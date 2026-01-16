@@ -24,6 +24,8 @@ builder.Services.AddScoped<IVerificationService, VerificationService>();
 builder.Services.AddScoped<IIssueService, IssueService>();
 //builder.Services.AddScoped<ICustomizationService, CustomizationService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IServerDataService, ServerDataService>();
+builder.Services.AddScoped<IDatabaseDetailService, DatabaseDetailService>();
 
 // Configure CORS to allow frontend access
 builder.Services.AddCors(options =>
