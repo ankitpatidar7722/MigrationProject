@@ -25,6 +25,9 @@ public class Project : ISoftDelete
     [MaxLength(50)]
     public string Status { get; set; } = "Active";
 
+    [MaxLength(50)]
+    public string? MigrationType { get; set; } // By Excel / By Tool
+
     public DateTime? StartDate { get; set; }
 
     public DateTime? TargetCompletionDate { get; set; }

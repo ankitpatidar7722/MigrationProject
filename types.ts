@@ -234,4 +234,17 @@ export interface ManualConfiguration {
   description: string;
   createdAt: string;
   updatedAt?: string;
+  migrationType?: 'By Excel' | 'By Tool';
+}
+
+export interface ExcelData {
+  id: number;
+  projectId: number;
+  moduleName: string;
+  subModuleName: string;
+  description: string;
+  filePath: string;
+  fileName: string;
+  uploadedBy?: number;
+  uploadedAt: string;
 }

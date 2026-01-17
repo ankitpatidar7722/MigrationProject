@@ -18,7 +18,8 @@ import {
   X,
   Copy,
   ArrowLeft,
-  Wrench
+  Wrench,
+  FileSpreadsheet
 } from 'lucide-react';
 import { Project, DataTransferCheck, VerificationRecord, MigrationIssue, CustomizationPoint, ManualConfiguration } from '../types';
 import { api } from '../services/api';
@@ -34,6 +35,7 @@ const ProjectDetail: React.FC = () => {
   const [issues, setIssues] = useState<MigrationIssue[]>([]);
   const [customizations, setCustomizations] = useState<CustomizationPoint[]>([]);
   const [manualConfigs, setManualConfigs] = useState<ManualConfiguration[]>([]);
+  const [excelData, setExcelData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Editing state
@@ -82,11 +84,15 @@ const ProjectDetail: React.FC = () => {
 
         // 3. Load Manual Configs (Non-Critical - Try/Catch)
         try {
-          const manualConfigsData = await api.manualConfigurations.getByProject(projectId);
+          // Load Manual Configs & Excel Data (Non-Critical)
+          const [manualConfigsData, excelDataList] = await Promise.all([
+            api.manualConfigurations.getByProject(projectId),
+            project.migrationType === 'By Excel' ? api.excelData.getByProject(projectId) : Promise.resolve([])
+          ]);
           setManualConfigs(manualConfigsData || []);
+          setExcelData(excelDataList || []);
         } catch (configErr) {
-          console.error('Failed to load manual configurations:', configErr);
-          // Don't block the UI, just show empty list or error state if needed
+          console.error('Failed to load aux configurations:', configErr);
           setManualConfigs([]);
         }
 
@@ -181,6 +187,19 @@ const ProjectDetail: React.FC = () => {
       path: 'manual-config'
     }
   ];
+
+  if (project?.migrationType === 'By Excel') {
+    modules.push({
+      id: 'excel-data',
+      title: 'Excel Data',
+      desc: 'Upload and manage Excel files',
+      icon: <FileSpreadsheet size={24} />,
+      count: excelData.length,
+      completed: excelData.length, // Treat uploaded as completed for progress
+      color: 'green',
+      path: 'excel-data'
+    });
+  }
 
   if (loading) {
     return (

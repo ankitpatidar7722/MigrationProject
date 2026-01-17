@@ -11,6 +11,7 @@ public class MigraTrackDbContext : DbContext
 
     // Core Tables
     public DbSet<User> Users { get; set; }
+    public DbSet<ExcelData> ExcelData { get; set; } // Pluralized by convention usually, but using singular to match class if preferred, or ExcelDatas
     public DbSet<ModuleGroup> ModuleGroups { get; set; }
     public DbSet<FieldMaster> FieldMaster { get; set; }
     

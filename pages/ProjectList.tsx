@@ -278,6 +278,7 @@ const ProjectList: React.FC = () => {
         projectId: newProject.projectId,
         clientName: newProject.clientName,
         description: newProject.description || '',
+        migrationType: newProject.migrationType || 'By Tool',
         status: newProject.status || 'Active',
         isActive: true,
         startDate: newProject.startDate ? new Date(newProject.startDate).toISOString() : null,
@@ -454,6 +455,18 @@ const ProjectList: React.FC = () => {
                   placeholder="e.g. Acme Industries"
                   required
                 />
+              </div>
+
+              <div>
+                <label className="block text-sm font-semibold mb-1.5">Migration Type</label>
+                <select
+                  value={newProject.migrationType || 'By Tool'}
+                  onChange={(e) => setNewProject({ ...newProject, migrationType: e.target.value as any })}
+                  className="w-full px-4 py-2.5 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="By Tool">By Tool</option>
+                  <option value="By Excel">By Excel</option>
+                </select>
               </div>
               {/* ... other fields ... */}
               <div>

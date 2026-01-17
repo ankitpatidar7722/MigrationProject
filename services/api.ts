@@ -12,7 +12,8 @@ import {
   WebTable,
   ServerData,
   DatabaseDetail,
-  ManualConfiguration
+  ManualConfiguration,
+  ExcelData
 } from '../types';
 
 /**
@@ -567,6 +568,43 @@ export const api = {
 
     delete: async (id: number): Promise<void> => {
       const response = await fetch(`${BASE_URL}/ManualConfigurations/${id}`, {
+        method: 'DELETE'
+      });
+      return handleResponse<void>(response);
+    },
+  },
+
+  // ==================== EXCEL DATA ====================
+  excelData: {
+    getByProject: async (projectId: number): Promise<ExcelData[]> => {
+      const response = await fetch(`${BASE_URL}/ExcelData/project/${projectId}`);
+      return handleResponse<ExcelData[]>(response);
+    },
+
+    upload: async (formData: FormData): Promise<ExcelData> => {
+      const response = await fetch(`${BASE_URL}/ExcelData/upload`, {
+        method: 'POST',
+        body: formData, // Content-Type handled automatically by browser
+      });
+      return handleResponse<ExcelData>(response);
+    },
+
+    update: async (id: number, formData: FormData): Promise<void> => {
+      const response = await fetch(`${BASE_URL}/ExcelData/${id}`, {
+        method: 'PUT',
+        body: formData,
+      });
+      return handleResponse<void>(response);
+    },
+
+    download: async (id: number): Promise<Blob> => {
+      const response = await fetch(`${BASE_URL}/ExcelData/download/${id}`);
+      if (!response.ok) throw new Error('Download failed');
+      return await response.blob();
+    },
+
+    delete: async (id: number): Promise<void> => {
+      const response = await fetch(`${BASE_URL}/ExcelData/${id}`, {
         method: 'DELETE'
       });
       return handleResponse<void>(response);
