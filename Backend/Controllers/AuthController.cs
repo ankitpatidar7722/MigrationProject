@@ -30,6 +30,7 @@ namespace MigraTrackAPI.Controllers
                 }
 
                 var user = await _context.Users
+                    .Include(u => u.Permissions)
                     .FirstOrDefaultAsync(u => u.Username == request.Username && (u.PasswordHash == request.Password || (u.PasswordHash == null && string.IsNullOrEmpty(request.Password))));
 
                 if (user == null)
@@ -42,6 +43,7 @@ namespace MigraTrackAPI.Controllers
                     user.UserId,
                     user.Username,
                     user.Role,
+                    Permissions = user.Permissions,
                     Token = "mock-jwt-token-" + Guid.NewGuid()
                 });
             }

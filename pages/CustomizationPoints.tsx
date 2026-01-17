@@ -4,11 +4,14 @@ import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { CustomizationPoint, CustomizationType, CustomizationStatus, ModuleMaster } from '../types';
 import { Plus, Search, Filter, Trash2, Edit3, Loader2, DollarSign, StickyNote, Tag, ArrowLeft } from 'lucide-react';
+import { LoadingOverlay } from '../components/LoadingOverlay';
 import { useRefresh } from '../services/RefreshContext';
+import { useAuth } from '../services/AuthContext';
 
 const CustomizationPoints: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
   const projectId = projectIdStr ? parseInt(projectIdStr, 10) : 0;
+  const { hasPermission } = useAuth();
 
   const [items, setItems] = useState<CustomizationPoint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,14 +169,7 @@ const CustomizationPoints: React.FC = () => {
   );
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-600" />
-          <p className="text-slate-500 dark:text-zinc-400">Loading customizations...</p>
-        </div>
-      </div>
-    );
+    return <LoadingOverlay isVisible={true} message="Loading Customization Points..." />;
   }
 
   return (
@@ -188,13 +184,15 @@ const CustomizationPoints: React.FC = () => {
             <p className="text-slate-500 dark:text-zinc-400 mt-1">Record client-specific post-migration enhancements.</p>
           </div>
         </div>
-        <button
-          onClick={() => { setEditingItem(null); setShowModal(true); }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium shadow-sm transition-all"
-        >
-          <Plus size={18} />
-          Record Requirement
-        </button>
+        {hasPermission('Customization Points', 'Create') && (
+          <button
+            onClick={() => { setEditingItem(null); setShowModal(true); }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-medium shadow-sm transition-all"
+          >
+            <Plus size={18} />
+            Record Requirement
+          </button>
+        )}
       </div>
 
       <div className="relative">
@@ -226,20 +224,24 @@ const CustomizationPoints: React.FC = () => {
                     <DollarSign size={14} />
                   </div>
                 )}
-                <button onClick={() => {
-                  setEditingItem(item);
-                  setSelectedModule(item.moduleName);
-                  setShowModal(true);
-                }} className="p-1 text-slate-400 hover:text-amber-600 transition-colors" title="Edit">
-                  <Edit3 size={16} />
-                </button>
-                <button
-                  onClick={() => handleDelete(item.customizationId)}
-                  className="p-1 text-slate-400 hover:text-red-500 transition-colors"
-                  title="Delete"
-                >
-                  <Trash2 size={16} />
-                </button>
+                {hasPermission('Customization Points', 'Edit') && (
+                  <button onClick={() => {
+                    setEditingItem(item);
+                    setSelectedModule(item.moduleName);
+                    setShowModal(true);
+                  }} className="p-1 text-slate-400 hover:text-amber-600 transition-colors" title="Edit">
+                    <Edit3 size={16} />
+                  </button>
+                )}
+                {hasPermission('Customization Points', 'Delete') && (
+                  <button
+                    onClick={() => handleDelete(item.customizationId)}
+                    className="p-1 text-slate-400 hover:text-red-500 transition-colors"
+                    title="Delete"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                )}
               </div>
             </div>
 
@@ -365,14 +367,16 @@ const CustomizationPoints: React.FC = () => {
               </div>
               <div className="pt-4 flex gap-3">
                 <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 bg-slate-100 dark:bg-zinc-800 rounded-xl font-bold">Cancel</button>
-                {editingItem && (
+                {editingItem && hasPermission('Customization Points', 'Create') && (
                   <button type="button" onClick={handleSaveAs} disabled={saving} className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50">
                     {saving ? 'Saving...' : 'Save As New'}
                   </button>
                 )}
-                <button type="submit" disabled={saving} className="flex-1 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50">
-                  {saving ? 'Saving...' : (editingItem ? 'Update Point' : 'Save Point')}
-                </button>
+                {(editingItem ? hasPermission('Customization Points', 'Edit') : hasPermission('Customization Points', 'Create')) && (
+                  <button type="submit" disabled={saving} className="flex-1 py-3 bg-amber-600 hover:bg-amber-700 text-white rounded-xl font-bold shadow-lg shadow-amber-500/20 transition-all disabled:opacity-50">
+                    {saving ? 'Saving...' : (editingItem ? 'Update Point' : 'Save Point')}
+                  </button>
+                )}
               </div>
             </form>
           </div>

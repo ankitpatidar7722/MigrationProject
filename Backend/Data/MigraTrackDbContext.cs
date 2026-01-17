@@ -40,6 +40,7 @@ public class MigraTrackDbContext : DbContext
     public DbSet<ServerData> ServerData { get; set; }
     public DbSet<DatabaseDetail> DatabaseDetails { get; set; }
     public DbSet<ManualConfiguration> ManualConfigurations { get; set; }
+    public DbSet<UserPermission> UserPermissions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -95,12 +96,22 @@ public class MigraTrackDbContext : DbContext
             .HasForeignKey(c => c.ProjectId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<ExcelData>()
+            .HasOne<Project>()
+            .WithMany()
+            .HasForeignKey(e => e.ProjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<ProjectEmail>()
             .HasOne<Project>()
             .WithMany()
             .HasForeignKey(e => e.ProjectId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<UserPermission>()
+            .HasIndex(p => new { p.UserId, p.ModuleName })
+            .IsUnique();
+        
         // Apply Global Query Filter for parsing Soft Delete
         foreach (var entityType in modelBuilder.Model.GetEntityTypes())
         {

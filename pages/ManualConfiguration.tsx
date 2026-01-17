@@ -5,10 +5,12 @@ import { ManualConfiguration as ManualConfigType, ModuleMaster } from '../types'
 import { Plus, Search, Loader2, ArrowLeft, Edit3, Trash2, Save, X } from 'lucide-react';
 import { SearchableSelect } from '../components/SearchableSelect';
 import { useRefresh } from '../services/RefreshContext';
+import { useAuth } from '../services/AuthContext';
 
 const ManualConfiguration: React.FC = () => {
     const { projectId: projectIdStr } = useParams<{ projectId: string }>();
     const projectId = projectIdStr ? parseInt(projectIdStr, 10) : 0;
+    const { hasPermission } = useAuth();
 
     const [configs, setConfigs] = useState<ManualConfigType[]>([]);
     const [loading, setLoading] = useState(true);
@@ -165,7 +167,7 @@ const ManualConfiguration: React.FC = () => {
                     </div>
                 </div>
 
-                {!showForm && !editingId && (
+                {!showForm && !editingId && hasPermission('Manual Configuration', 'Create') && (
                     <button
                         onClick={() => setShowForm(true)}
                         className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 transition-all flex items-center gap-2"
@@ -231,18 +233,20 @@ const ManualConfiguration: React.FC = () => {
                             >
                                 <X size={18} /> Cancel
                             </button>
-                            <button
-                                type="submit"
-                                disabled={saving}
-                                className={`px-6 py-2.5 text-white rounded-xl font-bold shadow-lg transition-all flex items-center gap-2
+                            {(editingId ? hasPermission('Manual Configuration', 'Edit') : hasPermission('Manual Configuration', 'Create')) && (
+                                <button
+                                    type="submit"
+                                    disabled={saving}
+                                    className={`px-6 py-2.5 text-white rounded-xl font-bold shadow-lg transition-all flex items-center gap-2
                     ${editingId
-                                        ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'
-                                        : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20'
-                                    } disabled:opacity-50`}
-                            >
-                                <Save size={18} />
-                                {saving ? 'Saving...' : (editingId ? 'Update Record' : 'Save Record')}
-                            </button>
+                                            ? 'bg-blue-600 hover:bg-blue-700 shadow-blue-500/20'
+                                            : 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20'
+                                        } disabled:opacity-50`}
+                                >
+                                    <Save size={18} />
+                                    {saving ? 'Saving...' : (editingId ? 'Update Record' : 'Save Record')}
+                                </button>
+                            )}
                         </div>
                     </form>
                 </div>
@@ -290,20 +294,24 @@ const ManualConfiguration: React.FC = () => {
                                         </td>
                                         <td className="px-6 py-4 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={() => handleEdit(item)}
-                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                    title="Edit"
-                                                >
-                                                    <Edit3 size={16} />
-                                                </button>
-                                                <button
-                                                    onClick={() => handleDelete(item.id)}
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                {hasPermission('Manual Configuration', 'Edit') && (
+                                                    <button
+                                                        onClick={() => handleEdit(item)}
+                                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        title="Edit"
+                                                    >
+                                                        <Edit3 size={16} />
+                                                    </button>
+                                                )}
+                                                {hasPermission('Manual Configuration', 'Delete') && (
+                                                    <button
+                                                        onClick={() => handleDelete(item.id)}
+                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

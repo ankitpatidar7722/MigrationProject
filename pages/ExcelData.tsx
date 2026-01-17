@@ -19,11 +19,13 @@ import {
 } from 'lucide-react';
 import { useRefresh } from '../services/RefreshContext';
 import { SearchableSelect } from '../components/SearchableSelect';
+import { useAuth } from '../services/AuthContext';
 
 const ExcelDataPage: React.FC = () => {
     const { projectId: projectIdStr } = useParams<{ projectId: string }>();
     const projectId = projectIdStr ? parseInt(projectIdStr, 10) : 0;
     const { registerRefresh } = useRefresh();
+    const { hasPermission } = useAuth();
 
     const [excelDataList, setExcelDataList] = useState<ExcelData[]>([]);
     const [moduleMasters, setModuleMasters] = useState<ModuleMaster[]>([]);
@@ -212,13 +214,15 @@ const ExcelDataPage: React.FC = () => {
                     </p>
                 </div>
 
-                <button
-                    onClick={() => { setShowForm(true); resetForm(); }}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm"
-                >
-                    <Plus size={18} />
-                    Upload New
-                </button>
+                {hasPermission('Excel Data', 'Create') && (
+                    <button
+                        onClick={() => { setShowForm(true); resetForm(); }}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm"
+                    >
+                        <Plus size={18} />
+                        Upload New
+                    </button>
+                )}
             </div>
 
             {/* Upload Modal */}
@@ -303,14 +307,16 @@ const ExcelDataPage: React.FC = () => {
                             >
                                 Cancel
                             </button>
-                            <button
-                                onClick={handleSave}
-                                disabled={saving}
-                                className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
-                            >
-                                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                                {editingId ? 'Save Changes' : 'Upload'}
-                            </button>
+                            {(editingId ? hasPermission('Excel Data', 'Edit') : hasPermission('Excel Data', 'Create')) && (
+                                <button
+                                    onClick={handleSave}
+                                    disabled={saving}
+                                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm flex items-center gap-2 disabled:opacity-50"
+                                >
+                                    {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                                    {editingId ? 'Save Changes' : 'Upload'}
+                                </button>
+                            )}
                         </div>
                     </div>
                 </div>
@@ -369,13 +375,15 @@ const ExcelDataPage: React.FC = () => {
                                         </td>
                                         <td className="p-4 text-right">
                                             <div className="flex items-center justify-end gap-2">
-                                                <button
-                                                    onClick={() => handleEdit(item)}
-                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                                                    title="Edit"
-                                                >
-                                                    <Edit2 size={16} />
-                                                </button>
+                                                {hasPermission('Excel Data', 'Edit') && (
+                                                    <button
+                                                        onClick={() => handleEdit(item)}
+                                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                                                        title="Edit"
+                                                    >
+                                                        <Edit2 size={16} />
+                                                    </button>
+                                                )}
                                                 <button
                                                     onClick={() => handleDownload(item.id, item.fileName)}
                                                     className="p-2 text-slate-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors"
@@ -383,13 +391,15 @@ const ExcelDataPage: React.FC = () => {
                                                 >
                                                     <Download size={16} />
                                                 </button>
-                                                <button
-                                                    onClick={() => handleDelete(item.id)}
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                                                    title="Delete"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
+                                                {hasPermission('Excel Data', 'Delete') && (
+                                                    <button
+                                                        onClick={() => handleDelete(item.id)}
+                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                                                        title="Delete"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
                                             </div>
                                         </td>
                                     </tr>

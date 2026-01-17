@@ -23,12 +23,14 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { SearchableSelect } from '../components/SearchableSelect';
+import { useAuth } from '../services/AuthContext';
+import { LoadingOverlay } from '../components/LoadingOverlay';
 
 interface SortableProjectCardProps {
   project: Project;
   stats: any;
-  onEdit: (project: Project) => void;
-  onDelete: (id: number) => void;
+  onEdit?: (project: Project) => void;
+  onDelete?: (id: number) => void;
 }
 
 const SortableProjectCard: React.FC<SortableProjectCardProps> = ({ project, stats, onEdit, onDelete }) => {
@@ -58,32 +60,39 @@ const SortableProjectCard: React.FC<SortableProjectCardProps> = ({ project, stat
         <div className="flex items-start justify-between mb-4">
           <div className="flex items-center gap-3">
             {/* Drag Handle */}
-            <div
-              {...attributes}
-              {...listeners}
-              className="cursor-move text-slate-300 hover:text-slate-500 dark:text-zinc-600 dark:hover:text-zinc-400"
-            >
-              <GripVertical size={20} />
-            </div>
+            {/* Drag Handle - Only show if draggable (which we'll tie to onEdit presence for now or pass explicit prop) */}
+            {onEdit && (
+              <div
+                {...attributes}
+                {...listeners}
+                className="cursor-move text-slate-300 hover:text-slate-500 dark:text-zinc-600 dark:hover:text-zinc-400"
+              >
+                <GripVertical size={20} />
+              </div>
+            )}
             <div className="w-12 h-12 rounded-xl bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 flex items-center justify-center font-bold text-xl">
               {project.clientName[0]}
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => onEdit(project)}
-              className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-lg transition-colors"
-              title="Edit Project"
-            >
-              <Edit3 size={16} />
-            </button>
-            <button
-              onClick={() => onDelete(project.projectId)}
-              className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"
-              title="Delete Project"
-            >
-              <Trash2 size={16} />
-            </button>
+            {onEdit && (
+              <button
+                onClick={() => onEdit(project)}
+                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/10 rounded-lg transition-colors"
+                title="Edit Project"
+              >
+                <Edit3 size={16} />
+              </button>
+            )}
+            {onDelete && (
+              <button
+                onClick={() => onDelete(project.projectId)}
+                className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/10 rounded-lg transition-colors"
+                title="Delete Project"
+              >
+                <Trash2 size={16} />
+              </button>
+            )}
           </div>
         </div>
         <h3 className="text-lg font-bold truncate">{project.clientName}</h3>
@@ -193,6 +202,7 @@ const ProjectList: React.FC = () => {
   const [stats, setStats] = useState<Record<number, any>>({});
   const [servers, setServers] = useState<ServerData[]>([]);
   const [databases, setDatabases] = useState<DatabaseDetail[]>([]);
+  const { hasPermission } = useAuth();
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -271,8 +281,7 @@ const ProjectList: React.FC = () => {
     }
     setSaving(true);
     try {
-      // Determine max display order for new projects
-      const maxOrder = projects.length > 0 ? Math.max(...projects.map(p => p.displayOrder || 0)) : 0;
+
 
       const projectData: any = {
         projectId: newProject.projectId,
@@ -286,7 +295,7 @@ const ProjectList: React.FC = () => {
         liveDate: newProject.liveDate ? new Date(newProject.liveDate).toISOString() : null,
         implementationCoordinator: newProject.implementationCoordinator || null,
         coordinatorEmail: newProject.coordinatorEmail || null,
-        displayOrder: newProject.projectId ? undefined : maxOrder + 1,
+        displayOrder: newProject.projectId ? undefined : undefined, // Backend handles order (Min-1)
         serverIdDesktop: newProject.serverIdDesktop || null,
         databaseIdDesktop: newProject.databaseIdDesktop || null,
         serverIdWeb: newProject.serverIdWeb || null,
@@ -356,14 +365,7 @@ const ProjectList: React.FC = () => {
   );
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <p className="text-slate-500 dark:text-zinc-400">Loading projects...</p>
-        </div>
-      </div>
-    );
+    return <LoadingOverlay isVisible={true} message="Loading Projects..." />;
   }
 
   return (
@@ -373,24 +375,26 @@ const ProjectList: React.FC = () => {
           <h1 className="text-3xl font-bold">Clients & Projects</h1>
           <p className="text-slate-500 dark:text-zinc-400 mt-1">Manage multiple migration environments.</p>
         </div>
-        <button
-          onClick={() => {
-            setNewProject({
-              clientName: '',
-              description: '',
-              startDate: '',
-              targetCompletionDate: '',
-              liveDate: '',
-              implementationCoordinator: '',
-              coordinatorEmail: ''
-            });
-            setShowModal(true);
-          }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm"
-        >
-          <Plus size={18} />
-          New Client Project
-        </button>
+        {hasPermission('Projects', 'Create') && (
+          <button
+            onClick={() => {
+              setNewProject({
+                clientName: '',
+                description: '',
+                startDate: '',
+                targetCompletionDate: '',
+                liveDate: '',
+                implementationCoordinator: '',
+                coordinatorEmail: ''
+              });
+              setShowModal(true);
+            }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm"
+          >
+            <Plus size={18} />
+            New Client Project
+          </button>
+        )}
       </div>
 
       <div className="relative">
@@ -419,8 +423,8 @@ const ProjectList: React.FC = () => {
                 key={project.projectId}
                 project={project}
                 stats={stats[project.projectId]}
-                onEdit={handleEdit}
-                onDelete={handleDelete}
+                onEdit={hasPermission('Projects', 'Edit') ? handleEdit : undefined}
+                onDelete={hasPermission('Projects', 'Delete') ? handleDelete : undefined}
               />
             ))}
           </SortableContext>

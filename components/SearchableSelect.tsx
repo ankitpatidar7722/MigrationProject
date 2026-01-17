@@ -79,7 +79,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                     ${isOpen ? 'ring-2 ring-blue-500 bg-white dark:bg-zinc-900 border-transparent' : ''}
                     ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
                 `}
-                onClick={() => !disabled && setIsOpen(!isOpen)}
+                onClick={() => { if (!disabled) setIsOpen(!isOpen); }}
             >
                 {isOpen ? (
                     <input

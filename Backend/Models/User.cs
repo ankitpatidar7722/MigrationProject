@@ -27,5 +27,7 @@ namespace MigraTrackAPI.Models
         public DateTime UpdatedAt { get; set; } = DateTime.Now;
 
         public int IsDeletedTransaction { get; set; }
+
+        public virtual ICollection<UserPermission> Permissions { get; set; } = new List<UserPermission>();
     }
 }

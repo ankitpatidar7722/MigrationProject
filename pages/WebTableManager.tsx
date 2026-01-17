@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { WebTable, ModuleMaster } from '../types';
 import { Plus, Search, Trash2, Edit3, Loader2, X, Database, ArrowLeft, Table, Monitor, LayoutGrid } from 'lucide-react';
+import { LoadingOverlay } from '../components/LoadingOverlay';
 import { Link } from 'react-router-dom';
+import { useAuth } from '../services/AuthContext';
 
 const WebTableManager: React.FC = () => {
+    const { hasPermission } = useAuth();
     const [tables, setTables] = useState<WebTable[]>([]);
     const [modules, setModules] = useState<ModuleMaster[]>([]);
     const [loading, setLoading] = useState(true);
@@ -156,6 +159,12 @@ const WebTableManager: React.FC = () => {
         .filter((m): m is ModuleMaster => m !== undefined)
         .sort((a, b) => (a.moduleName || '').localeCompare(b.moduleName || ''));
 
+
+
+    if (loading) {
+        return <LoadingOverlay isVisible={true} message="Loading Tables..." />;
+    }
+
     return (
         <div className="space-y-6 w-full max-w-[95%] mx-auto">
             <Link
@@ -171,17 +180,19 @@ const WebTableManager: React.FC = () => {
                     <h1 className="text-3xl font-bold">Web Tables</h1>
                     <p className="text-slate-500 dark:text-zinc-400 mt-1">Manage standard web application tables.</p>
                 </div>
-                <button
-                    onClick={() => {
-                        setEditingTable(null);
-                        setFormData({ tableName: '', desktopTableName: '', moduleName: '', groupIndex: undefined, description: '' });
-                        setShowModal(true);
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-all"
-                >
-                    <Plus size={18} />
-                    Add Table
-                </button>
+                {hasPermission('Tables', 'Create') && (
+                    <button
+                        onClick={() => {
+                            setEditingTable(null);
+                            setFormData({ tableName: '', desktopTableName: '', moduleName: '', groupIndex: undefined, description: '' });
+                            setShowModal(true);
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-all"
+                    >
+                        <Plus size={18} />
+                        Add Table
+                    </button>
+                )}
             </div>
 
             <div className="relative">
@@ -259,18 +270,22 @@ const WebTableManager: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <button
-                                                onClick={() => handleEdit(table)}
-                                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                                            >
-                                                <Edit3 size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(table.webTableId)}
-                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            {hasPermission('Tables', 'Edit') && (
+                                                <button
+                                                    onClick={() => handleEdit(table)}
+                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                                >
+                                                    <Edit3 size={16} />
+                                                </button>
+                                            )}
+                                            {hasPermission('Tables', 'Delete') && (
+                                                <button
+                                                    onClick={() => handleDelete(table.webTableId)}
+                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

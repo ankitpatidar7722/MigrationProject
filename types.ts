@@ -188,9 +188,44 @@ export interface ProjectEmail {
 export interface User {
   userId: number;
   username: string;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
   role: string;
   token?: string;
+  permissions?: UserPermission[];
+  isActive?: boolean;
 }
+
+export interface UserPermission {
+  id: number;
+  userId: number;
+  moduleName: string;
+  canView: boolean;
+  canCreate: boolean;
+  canEdit: boolean;
+  canSave: boolean;
+  canDelete: boolean;
+}
+
+export const AppModules = [
+  'Projects',
+  'Data Transfer Checks',
+  'Verification List',
+  'Customization Points',
+  'Migration Issues',
+  'Manual Configuration',
+  'Excel Data',
+  'Email Documentation',
+  'Fields',
+  'Module Master',
+  'Tables',
+  'Database',
+  'Clone Project',
+  'User'
+] as const;
+
+export type ModuleName = typeof AppModules[number];
 
 export interface LoginRequest {
   username: string;

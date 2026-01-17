@@ -54,9 +54,9 @@ public class ProjectService : IProjectService
         project.CreatedAt = DateTime.Now;
         project.UpdatedAt = DateTime.Now;
         
-        // Auto-increment DisplayOrder logic moved here
-        var maxOrder = await _context.Projects.MaxAsync(p => (int?)p.DisplayOrder) ?? 0;
-        project.DisplayOrder = maxOrder + 1;
+        // Auto-increment DisplayOrder logic: Place at TOP (Min - 1)
+        var minOrder = await _context.Projects.MinAsync(p => (int?)p.DisplayOrder) ?? 0;
+        project.DisplayOrder = minOrder - 1;
 
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
@@ -82,7 +82,7 @@ public class ProjectService : IProjectService
         existing.TechnicalLead = project.TechnicalLead;
         existing.ImplementationCoordinator = project.ImplementationCoordinator;
         existing.CoordinatorEmail = project.CoordinatorEmail;
-        existing.DisplayOrder = project.DisplayOrder; // Update DisplayOrder
+        // existing.DisplayOrder = project.DisplayOrder; // Do NOT update DisplayOrder on general edit. Preserves position.
         
         // Update Connection Fields
         existing.ServerIdDesktop = project.ServerIdDesktop;

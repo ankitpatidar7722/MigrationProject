@@ -10,13 +10,16 @@ import {
   Plus,
   Loader2
 } from 'lucide-react';
+import { LoadingOverlay } from '../components/LoadingOverlay';
 import { storageService } from '../services/storageService';
 import { api } from '../services/api';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, PieChart, Pie } from 'recharts';
 import { Project, DataTransferCheck, MigrationIssue } from '../types';
+import { useLanguage } from '../services/LanguageContext';
 
 const Dashboard: React.FC = () => {
+  const { t } = useLanguage();
   const [projects, setProjects] = useState<Project[]>([]);
   const [allTransfers, setAllTransfers] = useState<DataTransferCheck[]>([]);
   const [allIssues, setAllIssues] = useState<MigrationIssue[]>([]);
@@ -102,14 +105,7 @@ const Dashboard: React.FC = () => {
   });
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <p className="text-slate-500 dark:text-zinc-400">Loading dashboard...</p>
-        </div>
-      </div>
-    );
+    return <LoadingOverlay isVisible={true} message={t('loading_dashboard')} />;
   }
 
   if (error) {
@@ -117,13 +113,13 @@ const Dashboard: React.FC = () => {
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 p-6 rounded-xl text-center max-w-md">
           <AlertCircle className="w-12 h-12 mx-auto mb-4" />
-          <h3 className="font-semibold text-lg mb-2">Connection Error</h3>
+          <h3 className="font-semibold text-lg mb-2">{t('connection_error')}</h3>
           <p className="text-sm">{error}</p>
           <button
             onClick={() => window.location.reload()}
             className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-medium transition-colors"
           >
-            Retry
+            {t('retry')}
           </button>
         </div>
       </div>
@@ -134,8 +130,8 @@ const Dashboard: React.FC = () => {
     <div className="space-y-8 animate-in fade-in duration-500">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Dashboard Overview</h1>
-          <p className="text-slate-500 dark:text-zinc-400 mt-1">Real-time tracking of all active data migrations.</p>
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">{t('dashboard_overview')}</h1>
+          <p className="text-slate-500 dark:text-zinc-400 mt-1">{t('dashboard_subtitle')}</p>
         </div>
       </div>
 
@@ -150,7 +146,7 @@ const Dashboard: React.FC = () => {
               }`}>
               {stat.icon}
             </div>
-            <p className="text-sm font-medium text-slate-500 dark:text-zinc-400">{stat.label}</p>
+            <p className="text-sm font-medium text-slate-500 dark:text-zinc-400">{t(stat.label.toLowerCase().replace(/ /g, '_'))}</p>
             <h3 className="text-3xl font-bold mt-1">{stat.value}</h3>
           </div>
         ))}
@@ -159,7 +155,7 @@ const Dashboard: React.FC = () => {
       {/* Overview Donut Charts */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-[0_0_15px_rgba(168,85,247,0.15)] dark:shadow-[0_0_15px_rgba(168,85,247,0.1)] transition-shadow hover:shadow-[0_0_20px_rgba(168,85,247,0.25)]">
-          <h2 className="text-lg font-bold mb-6 text-center">Project Status Distribution</h2>
+          <h2 className="text-lg font-bold mb-6 text-center">{t('project_status_distribution')}</h2>
           <div className="h-[250px] w-full flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -175,7 +171,7 @@ const Dashboard: React.FC = () => {
                   outerRadius={80}
                   paddingAngle={5}
                   dataKey="value"
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                  label={({ name, percent }) => `${t(name.toLowerCase().replace(/ /g, '_'))} ${(percent * 100).toFixed(0)}%`}
                 >
                   <Cell key="cell-active" fill="#8b5cf6" />
                   <Cell key="cell-completed" fill="#d946ef" />
@@ -197,21 +193,21 @@ const Dashboard: React.FC = () => {
           <div className="flex justify-center gap-6 mt-4 pb-2 border-t border-slate-100 dark:border-zinc-800 pt-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm bg-violet-500"></div>
-              <span className="text-xs text-slate-500 font-medium">Active</span>
+              <span className="text-xs text-slate-500 font-medium">{t('active')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm bg-fuchsia-500"></div>
-              <span className="text-xs text-slate-500 font-medium">Completed</span>
+              <span className="text-xs text-slate-500 font-medium">{t('completed')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm bg-violet-300"></div>
-              <span className="text-xs text-slate-500 font-medium">On Hold</span>
+              <span className="text-xs text-slate-500 font-medium">{t('on_hold')}</span>
             </div>
           </div>
         </div>
 
         <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-[0_0_15px_rgba(236,72,153,0.15)] dark:shadow-[0_0_15px_rgba(236,72,153,0.1)] transition-shadow hover:shadow-[0_0_20px_rgba(236,72,153,0.25)]">
-          <h2 className="text-lg font-bold mb-6 text-center">Overall Migration Progress</h2>
+          <h2 className="text-lg font-bold mb-6 text-center">{t('overall_migration_progress')}</h2>
           <div className="h-[250px] w-full flex items-center justify-center">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -247,11 +243,11 @@ const Dashboard: React.FC = () => {
           <div className="flex justify-center gap-6 mt-4 pb-2 border-t border-slate-100 dark:border-zinc-800 pt-4">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm bg-fuchsia-500"></div>
-              <span className="text-xs text-slate-500 font-medium">Completed</span>
+              <span className="text-xs text-slate-500 font-medium">{t('completed')}</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-sm bg-violet-300"></div>
-              <span className="text-xs text-slate-500 font-medium">Pending</span>
+              <span className="text-xs text-slate-500 font-medium">{t('pending_checks')}</span>
             </div>
           </div>
         </div>

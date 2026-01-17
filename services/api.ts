@@ -13,7 +13,8 @@ import {
   ServerData,
   DatabaseDetail,
   ManualConfiguration,
-  ExcelData
+  ExcelData,
+  User
 } from '../types';
 
 /**
@@ -605,6 +606,44 @@ export const api = {
 
     delete: async (id: number): Promise<void> => {
       const response = await fetch(`${BASE_URL}/ExcelData/${id}`, {
+        method: 'DELETE'
+      });
+      return handleResponse<void>(response);
+    },
+  },
+
+  // ==================== USERS ====================
+  users: {
+    getAll: async (): Promise<User[]> => {
+      const response = await fetch(`${BASE_URL}/Users`);
+      return handleResponse<User[]>(response);
+    },
+
+    getById: async (id: number): Promise<User> => {
+      const response = await fetch(`${BASE_URL}/Users/${id}`);
+      return handleResponse<User>(response);
+    },
+
+    create: async (user: User): Promise<User> => {
+      const response = await fetch(`${BASE_URL}/Users`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user),
+      });
+      return handleResponse<User>(response);
+    },
+
+    update: async (id: number, user: User): Promise<void> => {
+      const response = await fetch(`${BASE_URL}/Users/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(user),
+      });
+      return handleResponse<void>(response);
+    },
+
+    delete: async (id: number): Promise<void> => {
+      const response = await fetch(`${BASE_URL}/Users/${id}`, {
         method: 'DELETE'
       });
       return handleResponse<void>(response);

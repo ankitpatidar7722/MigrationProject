@@ -3,6 +3,7 @@ import { api } from '../services/api';
 import { ServerData, DatabaseDetail } from '../types';
 import { Plus, Search, Server, Database, Trash2, Edit3, X, Loader2, Save } from 'lucide-react';
 import { useRefresh } from '../services/RefreshContext';
+import { useAuth } from '../services/AuthContext';
 
 const DatabaseManager: React.FC = () => {
     const [databases, setDatabases] = useState<DatabaseDetail[]>([]);
@@ -20,6 +21,9 @@ const DatabaseManager: React.FC = () => {
         serverIndex: ''
     });
 
+
+
+    const { hasPermission } = useAuth();
     const { registerRefresh } = useRefresh();
 
     const loadData = async () => {
@@ -162,13 +166,15 @@ const DatabaseManager: React.FC = () => {
                             </button>
                         ))}
                     </div>
-                    <button
-                        onClick={() => { resetForm(); setShowModal(true); }}
-                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm"
-                    >
-                        <Plus size={18} />
-                        Add Database
-                    </button>
+                    {hasPermission('Database', 'Create') && (
+                        <button
+                            onClick={() => { resetForm(); setShowModal(true); }}
+                            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm"
+                        >
+                            <Plus size={18} />
+                            Add Database
+                        </button>
+                    )}
                 </div>
             </div>
 
@@ -197,12 +203,16 @@ const DatabaseManager: React.FC = () => {
                                 </div>
                             </div>
                             <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button onClick={() => handleEdit(db)} className="p-2 text-slate-400 hover:text-blue-500 rounded-lg icon-btn">
-                                    <Edit3 size={16} />
-                                </button>
-                                <button onClick={() => handleDelete(db.databaseId)} className="p-2 text-slate-400 hover:text-red-500 rounded-lg icon-btn">
-                                    <Trash2 size={16} />
-                                </button>
+                                {hasPermission('Database', 'Edit') && (
+                                    <button onClick={() => handleEdit(db)} className="p-2 text-slate-400 hover:text-blue-500 rounded-lg icon-btn">
+                                        <Edit3 size={16} />
+                                    </button>
+                                )}
+                                {hasPermission('Database', 'Delete') && (
+                                    <button onClick={() => handleDelete(db.databaseId)} className="p-2 text-slate-400 hover:text-red-500 rounded-lg icon-btn">
+                                        <Trash2 size={16} />
+                                    </button>
+                                )}
                             </div>
                         </div>
 
@@ -331,14 +341,16 @@ const DatabaseManager: React.FC = () => {
                                 >
                                     Cancel
                                 </button>
-                                <button
-                                    type="submit"
-                                    disabled={saving}
-                                    className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm disabled:opacity-50 flex items-center gap-2"
-                                >
-                                    {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                                    Save Database
-                                </button>
+                                {(formData.databaseId ? hasPermission('Database', 'Edit') : hasPermission('Database', 'Create')) && (
+                                    <button
+                                        type="submit"
+                                        disabled={saving}
+                                        className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm disabled:opacity-50 flex items-center gap-2"
+                                    >
+                                        {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+                                        Save Database
+                                    </button>
+                                )}
                             </div>
                         </form>
                     </div>

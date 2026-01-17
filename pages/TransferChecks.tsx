@@ -2,13 +2,18 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
+import { useAuth } from '../services/AuthContext';
 import { DataTransferCheck, Status, ModuleMaster, WebTable, FieldMaster } from '../types';
 import { Plus, Search, Filter, Trash2, Edit3, Download, Check, Loader2, ArrowLeft } from 'lucide-react';
+import { LoadingOverlay } from '../components/LoadingOverlay';
 import { useRefresh } from '../services/RefreshContext';
+import { useLanguage } from '../services/LanguageContext';
 
 const TransferChecks: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
   const projectId = projectIdStr ? parseInt(projectIdStr, 10) : 0;
+  const { hasPermission } = useAuth();
+  const { t } = useLanguage();
 
   const [items, setItems] = useState<DataTransferCheck[]>([]);
   const [loading, setLoading] = useState(true);
@@ -232,261 +237,345 @@ const TransferChecks: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <p className="text-slate-500 dark:text-zinc-400">Loading transfer checks...</p>
-        </div>
-      </div>
-    );
+    return <LoadingOverlay isVisible={true} message="Loading Transfer Checks..." />;
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-center gap-3">
-          <Link to={`/projects/${projectId}`} className="p-2 -ml-2 text-slate-400 hover:text-blue-600 rounded-lg transition-colors">
-            <ArrowLeft size={24} />
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold">Data Transfer Checks</h1>
-            <p className="text-slate-500 dark:text-zinc-400 mt-1">Checklist for table migration tracking.</p>
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          <button
-            onClick={exportCSV}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-lg font-medium text-slate-700 dark:text-white hover:bg-slate-50 dark:hover:bg-zinc-800 transition-all shadow-sm"
-          >
-            <Download size={18} />
-            Export
-          </button>
-          <button
-            onClick={() => { setEditingItem(null); setShowModal(true); }}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all shadow-sm"
-          >
-            <Plus size={18} />
-            Add Row
-          </button>
-        </div>
-      </div>
+  // Calculate Difference Logic
+  const calculateDiff = (desktop: number, web: number) => {
+    return desktop - web;
+  };
 
-      <div className="flex flex-col md:flex-row gap-4">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
-          <input
-            type="text"
-            placeholder="Search tables or modules..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-xl outline-none focus:ring-2 focus:ring-blue-500/20 transition-all shadow-sm"
-          />
+  return (
+    <div className="space-y-6 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white">{t('data_transfer_checks')}</h1>
+          <p className="text-slate-500 dark:text-zinc-400 mt-1">Compare record counts between desktop and web databases.</p>
         </div>
         <div className="flex items-center gap-2">
-          <Filter className="text-slate-400" size={18} />
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value as any)}
-            className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 text-sm rounded-xl px-4 py-2.5 outline-none focus:ring-2 focus:ring-blue-500/20 shadow-sm"
-          >
-            <option value="All">All Statuses</option>
-            <option value="Not Started">Not Started</option>
-            <option value="Pending">Pending</option>
-            <option value="Completed">Completed</option>
-          </select>
+          {hasPermission('Data Transfer Checks', 'Create') && (
+            <button
+              onClick={() => {
+                setEditingItem(null);
+                setShowModal(true);
+              }}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm hover:shadow active:scale-95"
+            >
+              <Plus size={18} />
+              <span className="font-medium">{t('new_check')}</span>
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden">
-        <div className="overflow-x-auto notion-scrollbar">
+      <div className="bg-white dark:bg-zinc-900 rounded-xl border border-slate-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+        <div className="p-4 border-b border-slate-200 dark:border-zinc-800 flex flex-col md:flex-row gap-4 items-center justify-between">
+          <div className="relative w-full md:w-96">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder={t('search_records')}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+            />
+          </div>
+          <div className="flex items-center gap-2 w-full md:w-auto overflow-x-auto pb-2 md:pb-0">
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as Status | 'All')}
+              className="px-3 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-lg text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="All">{t('all_statuses')}</option>
+              <option value="Running">Running</option>
+              <option value="Completed">Completed</option>
+              <option value="Failed">Failed</option>
+            </select>
+            <button className="flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800 rounded-lg transition-colors border border-slate-200 dark:border-zinc-800">
+              <Download size={18} />
+              <span className="hidden sm:inline text-sm font-medium">{t('export_csv')}</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50 dark:bg-zinc-800/50 border-b border-slate-200 dark:border-zinc-800">
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 w-12 text-center">Done</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Module</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Sub Module</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Condition</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Desktop Table</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Web Table</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400">Status</th>
-                <th className="px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-zinc-400 text-right">Actions</th>
+              <tr className="bg-slate-50 dark:bg-zinc-800/50 border-b border-slate-200 dark:border-zinc-800 text-xs uppercase text-slate-500 font-semibold tracking-wider">
+                <th className="px-6 py-4 rounded-tl-lg">{t('module_name')}</th>
+                <th className="px-6 py-4">{t('sub_module')}</th>
+                <th className="px-6 py-4">{t('condition')}</th>
+                <th className="px-6 py-4 text-center">{t('source_table')}</th>
+                <th className="px-6 py-4 text-center">{t('target_table')}</th>
+                <th className="px-6 py-4 text-center bg-blue-50/50 dark:bg-blue-900/10 text-blue-700 dark:text-blue-400">{t('desktop_count')}</th>
+                <th className="px-6 py-4 text-center bg-purple-50/50 dark:bg-purple-900/10 text-purple-700 dark:text-purple-400">{t('web_count')}</th>
+                <th className="px-6 py-4 text-center">{t('difference')}</th>
+                <th className="px-6 py-4 text-center">{t('status')}</th>
+                <th className="px-6 py-4 text-right rounded-tr-lg">{t('actions')}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
-              {filtered.map(item => (
-                <tr key={item.transferId} className="hover:bg-slate-50/50 dark:hover:bg-zinc-800/30 transition-colors group">
-                  <td className="px-6 py-4 text-center">
-                    <button
-                      onClick={() => toggleStatus(item)}
-                      className={`w-6 h-6 rounded-md border flex items-center justify-center transition-all ${item.status === 'Completed'
-                        ? 'bg-emerald-500 border-emerald-500 text-white'
-                        : 'border-slate-300 dark:border-zinc-700 bg-transparent text-transparent hover:border-blue-500'
-                        }`}
-                    >
-                      <Check size={14} strokeWidth={4} />
-                    </button>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="font-semibold text-sm">{item.moduleName}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-slate-600 dark:text-zinc-400">{item.subModuleName}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <span className="text-sm text-slate-500 dark:text-zinc-500 italic max-w-[200px] truncate block" title={item.condition}>{item.condition || '-'}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                    <code className="px-2 py-1 bg-slate-100 dark:bg-zinc-800 rounded text-xs font-mono text-slate-700 dark:text-zinc-300">{item.tableNameDesktop}</code>
-                  </td>
-                  <td className="px-6 py-4">
-                    <code className="px-2 py-1 bg-blue-50 dark:bg-blue-900/20 rounded text-xs font-mono text-blue-700 dark:text-blue-400">{item.tableNameWeb}</code>
-                  </td>
-                  <td className="px-6 py-4">
-                    <button
-                      onClick={() => toggleStatus(item)}
-                      className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider transition-colors ${getStatusColor(item.status)}`}
-                    >
-                      {item.status}
-                    </button>
-                  </td>
-                  <td className="px-6 py-4 text-right">
-                    <div className="flex items-center justify-end gap-1">
-                      <button
-                        onClick={() => {
-                          setEditingItem(item);
-                          setSelectedModule(item.moduleName);
-                          setShowModal(true);
-                        }}
-                        className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
-                      >
-                        <Edit3 size={16} />
-                      </button>
-                      <button
-                        onClick={() => item.transferId && handleDelete(item.transferId)}
-                        className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+              {items.length === 0 ? (
+                <tr>
+                  <td colSpan={10} className="px-6 py-12 text-center text-slate-400">
+                    <div className="flex flex-col items-center justify-center gap-3">
+                      <div className="w-16 h-16 rounded-full bg-slate-50 dark:bg-zinc-800 flex items-center justify-center">
+                        <Search size={24} className="opacity-50" />
+                      </div>
+                      <p>{t('no_records_found')}</p>
                     </div>
                   </td>
                 </tr>
-              ))}
-              {filtered.length === 0 && (
-                <tr>
-                  <td colSpan={7} className="px-6 py-12 text-center text-slate-400 italic">
-                    No records found for this project.
-                  </td>
-                </tr>
+              ) : (
+                items.map((item) => {
+                  const diff = calculateDiff(item.recordCountDesktop, item.recordCountWeb);
+                  const isMatch = diff === 0 && item.recordCountDesktop > 0;
+
+                  return (
+                    <tr key={item.transferId} className="group hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                      <td className="px-6 py-4 font-medium text-slate-900 dark:text-white">{item.moduleName}</td>
+                      <td className="px-6 py-4 text-slate-600 dark:text-zinc-400">{item.subModuleName}</td>
+                      <td className="px-6 py-4 text-slate-600 dark:text-zinc-400 font-mono text-xs overflow-hidden max-w-[150px] truncate" title={item.condition}>{item.condition || '-'}</td>
+                      <td className="px-6 py-4 text-center font-mono text-xs">{item.tableNameDesktop}</td>
+                      <td className="px-6 py-4 text-center font-mono text-xs">{item.tableNameWeb}</td>
+                      <td className="px-6 py-4 text-center font-bold text-slate-700 dark:text-zinc-300 bg-blue-50/30 dark:bg-blue-900/5">{item.recordCountDesktop.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-center font-bold text-slate-700 dark:text-zinc-300 bg-purple-50/30 dark:bg-purple-900/5">{item.recordCountWeb.toLocaleString()}</td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`px-2.5 py-1 rounded-full text-xs font-bold ${diff === 0
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          : 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400'
+                          }`}>
+                          {diff > 0 ? `+${diff}` : diff}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${isMatch
+                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
+                          : item.status === 'Running'
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
+                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                          }`}>
+                          {isMatch && <Check size={12} />}
+                          {isMatch ? t('completed') : item.status}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <div className="flex items-center justify-end gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {hasPermission('Data Transfer Checks', 'Edit') && (
+                            <button
+                              onClick={() => {
+                                setEditingItem(item);
+                                setShowModal(true);
+                              }}
+                              className="p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                              title={t('edit')}
+                            >
+                              <Edit3 size={16} />
+                            </button>
+                          )}
+                          {hasPermission('Data Transfer Checks', 'Delete') && (
+                            <button
+                              onClick={() => setDeleteConfirm({ show: true, id: item.transferId! })}
+                              className="p-1.5 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                              title={t('delete')}
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
         </div>
       </div>
 
-      {/* Modal */}
+      {/* Edit/Create Modal */}
       {showModal && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-lg rounded-2xl shadow-2xl overflow-hidden">
-            <div className="p-6 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
-              <h2 className="text-xl font-bold">{editingItem ? 'Edit Row' : 'Add New Row'}</h2>
-              <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
-                <XIcon size={20} />
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
+          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-200">
+            <div className="sticky top-0 z-10 flex items-center justify-between p-6 border-b border-slate-100 dark:border-zinc-800 bg-white dark:bg-zinc-900">
+              <h2 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-violet-600 bg-clip-text text-transparent">
+                {editingItem ? t('edit_check') : t('add_new_check')}
+              </h2>
+              <button
+                onClick={() => setShowModal(false)}
+                className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-zinc-300 rounded-full hover:bg-slate-100 dark:hover:bg-zinc-800 transition-colors"
+              >
+                <ArrowLeft size={20} />
               </button>
             </div>
-            <form onSubmit={handleSave}>
-              <div className="p-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-semibold mb-1.5">Module Name</label>
-                    <select
-                      name="moduleName"
-                      value={selectedModule}
-                      onChange={(e) => setSelectedModule(e.target.value)}
-                      required
-                      className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none"
-                    >
-                      <option value="" disabled hidden>Select Module</option>
-                      {uniqueModules.map(m => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-semibold mb-1.5">Sub Module</label>
-                    <select
-                      name="subModuleName"
-                      defaultValue={editingItem?.subModuleName}
-                      required
-                      disabled={!selectedModule}
-                      className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-blue-500 outline-none disabled:opacity-50"
-                    >
-                      <option value="" disabled hidden>Select Sub-Module</option>
-                      {availableSubModules.map(sm => (
-                        <option key={sm} value={sm}>{sm}</option>
-                      ))}
-                    </select>
-                  </div>
+
+            <form onSubmit={handleSave} className="p-6 space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
+                    {t('module_name')} <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="moduleName"
+                    required
+                    value={selectedModule}
+                    onChange={(e) => setSelectedModule(e.target.value)}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  >
+                    <option value="">Select Module</option>
+                    {uniqueModules.map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5">Condition</label>
-                  <input name="condition" defaultValue={editingItem?.condition || ''} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500" placeholder="Optional filter condition..." />
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
+                    {t('sub_module')} <span className="text-red-500">*</span>
+                  </label>
+                  <select
+                    name="subModuleName"
+                    required
+                    defaultValue={editingItem?.subModuleName}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  >
+                    <option value="">Select Sub Module</option>
+                    {availableSubModules.map(sm => (
+                      <option key={sm} value={sm}>{sm}</option>
+                    ))}
+                  </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5">
-                    Table Name (Desktop)
-                    {isDesktopTableRequired && <span className="text-red-500 ml-1">*</span>}
+
+                <div className="space-y-2 col-span-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
+                    {t('condition')}
+                  </label>
+                  <input
+                    name="condition"
+                    defaultValue={editingItem?.condition}
+                    placeholder="e.g. IsActive = 1"
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-sm"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
+                    {t('source_table')} {isDesktopTableRequired && <span className="text-red-500">*</span>}
                   </label>
                   <select
                     name="tableNameDesktop"
-                    defaultValue={editingItem?.tableNameDesktop || ""}
                     required={isDesktopTableRequired}
-                    disabled={!selectedModule}
-                    className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-mono disabled:opacity-50"
+                    defaultValue={editingItem?.tableNameDesktop}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-sm"
                   >
-                    <option value="" disabled hidden>Select Desktop Table</option>
+                    <option value="">Select Table</option>
                     {distinctDesktopTables.map(t => (
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5">
-                    Table Name (Web)
-                    {isWebTableRequired && <span className="text-red-500 ml-1">*</span>}
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
+                    {t('target_table')} {isWebTableRequired && <span className="text-red-500">*</span>}
                   </label>
                   <select
                     name="tableNameWeb"
-                    defaultValue={editingItem?.tableNameWeb || ""}
                     required={isWebTableRequired}
-                    disabled={!selectedModule}
-                    className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500 font-mono disabled:opacity-50"
+                    defaultValue={editingItem?.tableNameWeb}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-sm"
                   >
-                    <option value="" disabled hidden>Select Web Table</option>
+                    <option value="">Select Table</option>
                     {distinctWebTables.map(t => (
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold mb-1.5">Initial Status</label>
-                  <select name="status" defaultValue={editingItem?.status || 'Not Started'} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="Not Started">Not Started</option>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
+                    {t('desktop_count')}
+                  </label>
+                  <input
+                    type="number"
+                    name="recordCountDesktop"
+                    defaultValue={editingItem?.recordCountDesktop}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
+                    {t('web_count')}
+                  </label>
+                  <input
+                    type="number"
+                    name="recordCountWeb"
+                    defaultValue={editingItem?.recordCountWeb}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
+                    {t('status')}
+                  </label>
+                  <select
+                    name="status"
+                    defaultValue={editingItem?.status || 'Pending'}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                  >
                     <option value="Pending">Pending</option>
+                    <option value="Running">Running</option>
                     <option value="Completed">Completed</option>
+                    <option value="Failed">Failed</option>
                   </select>
                 </div>
+
+                <div className="space-y-2 col-span-2">
+                  <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
+                    {t('comments')}
+                  </label>
+                  <textarea
+                    name="comments"
+                    rows={3}
+                    defaultValue={editingItem?.comments}
+                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
+                  ></textarea>
+                </div>
               </div>
-              <div className="p-6 bg-slate-50 dark:bg-zinc-800/50 flex gap-3">
-                <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-2.5 bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-700 rounded-xl font-medium">Cancel</button>
-                {editingItem && (
-                  <button type="button" onClick={handleSaveAs} disabled={saving} className="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20 disabled:opacity-50">
-                    {saving ? 'Saving...' : 'Save As New'}
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-zinc-800">
+                <button
+                  type="button"
+                  onClick={() => setShowModal(false)}
+                  className="px-4 py-2 text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg font-medium transition-colors"
+                >
+                  {t('cancel')}
+                </button>
+
+                {hasPermission('Data Transfer Checks', 'Create') && editingItem && (
+                  <button
+                    type="button"
+                    onClick={handleSaveAs}
+                    disabled={saving}
+                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {saving ? <Loader2 size={18} className="animate-spin" /> : <Plus size={18} />}
+                    {t('save_as_new')}
                   </button>
                 )}
-                <button type="submit" disabled={saving} className="flex-1 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold shadow-lg shadow-blue-500/20 disabled:opacity-50">
-                  {saving ? 'Saving...' : (editingItem ? 'Update Record' : 'Save Record')}
-                </button>
+
+                {(hasPermission('Data Transfer Checks', 'Edit') || !editingItem) && (
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+                  >
+                    {saving && <Loader2 size={18} className="animate-spin" />}
+                    {editingItem ? t('update_record') : t('save')}
+                  </button>
+                )}
               </div>
             </form>
           </div>
@@ -495,35 +584,23 @@ const TransferChecks: React.FC = () => {
 
       {/* Delete Confirmation Modal */}
       {deleteConfirm.show && (
-        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-          <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 dark:border-zinc-800">
-            <div className="p-6">
-              <div className="flex items-center gap-4 mb-4">
-                <div className="w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center">
-                  <Trash2 size={24} className="text-red-600 dark:text-red-400" />
-                </div>
-                <div>
-                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">Delete Record</h3>
-                  <p className="text-sm text-slate-500 dark:text-zinc-400">This action cannot be undone</p>
-                </div>
-              </div>
-              <p className="text-slate-600 dark:text-zinc-300 mb-6">
-                Are you sure you want to delete this record? All data associated with this record will be permanently removed.
-              </p>
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setDeleteConfirm({ show: false, id: null })}
-                  className="flex-1 py-2.5 px-4 bg-slate-100 dark:bg-zinc-800 hover:bg-slate-200 dark:hover:bg-zinc-700 rounded-xl font-medium transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={confirmDelete}
-                  className="flex-1 py-2.5 px-4 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all"
-                >
-                  Delete
-                </button>
-              </div>
+        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-zinc-900 p-6 rounded-2xl shadow-xl max-w-sm w-full mx-4 border border-slate-100 dark:border-zinc-800 animate-in zoom-in-95 duration-200">
+            <h3 className="text-lg font-bold text-slate-900 dark:text-white mb-2">{t('confirm_delete')}</h3>
+            <p className="text-slate-500 dark:text-zinc-400 mb-6 text-sm">This action cannot be undone.</p>
+            <div className="flex justify-end gap-3">
+              <button
+                onClick={() => setDeleteConfirm({ show: false, id: null })}
+                className="px-4 py-2 text-slate-600 dark:text-zinc-300 hover:bg-slate-100 dark:hover:bg-zinc-800 rounded-lg font-medium transition-colors"
+              >
+                {t('cancel')}
+              </button>
+              <button
+                onClick={() => handleDelete(deleteConfirm.id!)}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-colors shadow-sm"
+              >
+                {t('delete')}
+              </button>
             </div>
           </div>
         </div>

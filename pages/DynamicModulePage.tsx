@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import { FieldMaster, DynamicModuleData } from '../types';
 import DynamicFormRenderer from '../components/DynamicFormRenderer';
 import { Loader2, Database, ArrowLeft } from 'lucide-react';
+import { LoadingOverlay } from '../components/LoadingOverlay';
 
 const DynamicModulePage: React.FC = () => {
   // We expect projectId and moduleGroupId in params
@@ -94,11 +95,7 @@ const DynamicModulePage: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-96">
-        <Loader2 className="animate-spin text-blue-600" size={32} />
-      </div>
-    );
+    return <LoadingOverlay isVisible={true} message="Loading Module..." />;
   }
 
   return (

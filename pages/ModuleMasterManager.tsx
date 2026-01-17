@@ -4,6 +4,7 @@ import { ModuleMaster } from '../types';
 import { Plus, Search, Trash2, Edit3, Loader2, Save, X, Database, ArrowLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useRefresh } from '../services/RefreshContext';
+import { useAuth } from '../services/AuthContext';
 
 const ModuleMasterManager: React.FC = () => {
     const [modules, setModules] = useState<ModuleMaster[]>([]);
@@ -22,6 +23,7 @@ const ModuleMasterManager: React.FC = () => {
         groupIndex: 1
     });
 
+    const { hasPermission } = useAuth();
     const { registerRefresh } = useRefresh();
 
     const loadModules = async () => {
@@ -147,17 +149,19 @@ const ModuleMasterManager: React.FC = () => {
                     <h1 className="text-3xl font-bold">Modules</h1>
                     <p className="text-slate-500 dark:text-zinc-400 mt-1">Manage system modules and submodule definitions.</p>
                 </div>
-                <button
-                    onClick={() => {
-                        setEditingModule(null);
-                        setFormData({ moduleName: '', subModuleName: '', groupIndex: 1 });
-                        setShowModal(true);
-                    }}
-                    className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-all"
-                >
-                    <Plus size={18} />
-                    Add Module
-                </button>
+                {hasPermission('Module Master', 'Create') && (
+                    <button
+                        onClick={() => {
+                            setEditingModule(null);
+                            setFormData({ moduleName: '', subModuleName: '', groupIndex: 1 });
+                            setShowModal(true);
+                        }}
+                        className="inline-flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium shadow-sm transition-all"
+                    >
+                        <Plus size={18} />
+                        Add Module
+                    </button>
+                )}
             </div>
 
             <div className="relative">
@@ -221,18 +225,22 @@ const ModuleMasterManager: React.FC = () => {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
-                                            <button
-                                                onClick={() => handleEdit(module)}
-                                                className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                                            >
-                                                <Edit3 size={16} />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDelete(module.moduleId)}
-                                                className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                            >
-                                                <Trash2 size={16} />
-                                            </button>
+                                            {hasPermission('Module', 'Edit') && (
+                                                <button
+                                                    onClick={() => handleEdit(module)}
+                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                                >
+                                                    <Edit3 size={16} />
+                                                </button>
+                                            )}
+                                            {hasPermission('Module', 'Delete') && (
+                                                <button
+                                                    onClick={() => handleDelete(module.moduleId)}
+                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                >
+                                                    <Trash2 size={16} />
+                                                </button>
+                                            )}
                                         </div>
                                     </td>
                                 </tr>

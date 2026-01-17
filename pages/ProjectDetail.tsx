@@ -21,13 +21,16 @@ import {
   Wrench,
   FileSpreadsheet
 } from 'lucide-react';
+import { LoadingOverlay } from '../components/LoadingOverlay';
 import { Project, DataTransferCheck, VerificationRecord, MigrationIssue, CustomizationPoint, ManualConfiguration } from '../types';
 import { api } from '../services/api';
+import { useAuth } from '../services/AuthContext';
 
 const ProjectDetail: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
   // Parse projectId to number
   const projectId = projectIdStr ? parseInt(projectIdStr, 10) : 0;
+  const { hasPermission } = useAuth();
 
   const [project, setProject] = useState<Project | null>(null);
   const [transfers, setTransfers] = useState<DataTransferCheck[]>([]);
@@ -144,7 +147,8 @@ const ProjectDetail: React.FC = () => {
       count: transfers.length,
       completed: transfers.filter(t => t.status === 'Completed').length,
       color: 'blue',
-      path: 'transfer'
+      path: 'transfer',
+      params: 'Data Transfer Checks'
     },
     {
       id: 'verification',
@@ -154,7 +158,8 @@ const ProjectDetail: React.FC = () => {
       count: verifications.length,
       completed: verifications.filter(v => v.status === 'Correct').length,
       color: 'emerald',
-      path: 'verification'
+      path: 'verification',
+      params: 'Verification List'
     },
     {
       id: 'issues',
@@ -164,7 +169,8 @@ const ProjectDetail: React.FC = () => {
       count: issues.length,
       completed: issues.filter(i => i.status === 'Closed').length,
       color: 'red',
-      path: 'issues'
+      path: 'issues',
+      params: 'Migration Issues'
     },
     {
       id: 'customization',
@@ -174,7 +180,8 @@ const ProjectDetail: React.FC = () => {
       count: customizations.length,
       completed: customizations.filter(c => c.status === 'Completed').length,
       color: 'amber',
-      path: 'customization'
+      path: 'customization',
+      params: 'Customization Points'
     },
     {
       id: 'manual-config',
@@ -184,7 +191,8 @@ const ProjectDetail: React.FC = () => {
       count: manualConfigs.length,
       completed: 0, // No status for manual config yet, or treat all as 'completed' if we want progress
       color: 'purple',
-      path: 'manual-config'
+      path: 'manual-config',
+      params: 'Manual Configuration'
     }
   ];
 
@@ -197,19 +205,15 @@ const ProjectDetail: React.FC = () => {
       count: excelData.length,
       completed: excelData.length, // Treat uploaded as completed for progress
       color: 'green',
-      path: 'excel-data'
+      path: 'excel-data',
+      params: 'Excel Data'
     });
   }
 
+  const visibleModules = modules.filter(m => hasPermission(m.params as any, 'View'));
+
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
-          <p className="text-slate-500 dark:text-zinc-400">Loading project...</p>
-        </div>
-      </div>
-    );
+    return <LoadingOverlay isVisible={true} message="Loading Project Details..." />;
   }
 
   if (!project) return <div className="p-8 text-center">Project not found</div>;
@@ -257,13 +261,15 @@ const ProjectDetail: React.FC = () => {
               ) : (
                 <div className="flex items-center gap-3 group">
                   <h1 className="text-3xl font-bold">{project.clientName}</h1>
-                  <button
-                    onClick={handleEditName}
-                    className="p-1.5 text-slate-400 opacity-0 group-hover:opacity-100 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                    title="Edit project name"
-                  >
-                    <Edit2 size={18} />
-                  </button>
+                  {hasPermission('Project', 'Edit') && (
+                    <button
+                      onClick={handleEditName}
+                      className="p-1.5 text-slate-400 opacity-0 group-hover:opacity-100 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                      title="Edit project name"
+                    >
+                      <Edit2 size={18} />
+                    </button>
+                  )}
                 </div>
               )}
               {!isEditingName && (
@@ -308,33 +314,45 @@ const ProjectDetail: React.FC = () => {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
-              <FileText size={20} />
-            </button>
-            <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">
-              <TrendingUp size={20} />
-            </button>
             <button
-              onClick={async () => {
-                try {
-                  const all = await storageService.getProjects();
-                  setAllProjects(all.filter(p => p.projectId !== projectId));
-                  setShowCloneModal(true);
-                } catch (e) {
-                  console.error(e);
+              onClick={() => {
+                if (project && customizations && issues) {
+                  import('../services/ReportGenerator').then(({ generateProjectReport }) => {
+                    generateProjectReport({ project, customizationPoints: customizations, issues });
+                  });
                 }
               }}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
+              className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
+              title="Export PDF Report"
             >
-              <Copy size={16} />
-              Clone Data to...
+              <FileText size={20} />
             </button>
+            <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors" title="View Statistics">
+              <TrendingUp size={20} />
+            </button>
+            {hasPermission('Project', 'Create') && (
+              <button
+                onClick={async () => {
+                  try {
+                    const all = await storageService.getProjects();
+                    setAllProjects(all.filter(p => p.projectId !== projectId));
+                    setShowCloneModal(true);
+                  } catch (e) {
+                    console.error(e);
+                  }
+                }}
+                className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-medium text-sm flex items-center gap-2 shadow-sm transition-all"
+              >
+                <Copy size={16} />
+                Clone Data to...
+              </button>
+            )}
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {modules.map(mod => (
+        {visibleModules.map(mod => (
           <Link
             key={mod.id}
             to={`/projects/${projectId}/${mod.path}`}

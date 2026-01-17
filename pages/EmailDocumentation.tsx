@@ -5,6 +5,7 @@ import {
     Plus, Search, Filter, Trash2, Edit3, Loader2, ArrowLeft,
     Calendar, User, Tag, Paperclip, MoreVertical, X, Upload
 } from 'lucide-react';
+import { useAuth } from '../services/AuthContext';
 import { api } from '../services/api';
 import { ProjectEmail, EmailCategory, Project } from '../types';
 
@@ -23,7 +24,9 @@ const StatCard = ({ icon, label, value }: { icon: React.ReactNode, label: string
 const EmailDocumentation = () => {
     const { id } = useParams<{ id: string }>();
     // Handle projectId whether it's string or number
+    // Handle projectId whether it's string or number
     const projectId = id ? parseInt(id) : 0;
+    const { hasPermission } = useAuth();
     const navigate = useNavigate();
 
     const [emails, setEmails] = useState<ProjectEmail[]>([]);
@@ -205,13 +208,15 @@ const EmailDocumentation = () => {
                     <StatCard icon={<AlertCircle className="text-orange-600" />} label="Clarifications" value={emails.filter(e => e.category === 'Clarification').length} />
                     <StatCard icon={<FileText className="text-purple-600" />} label="Requirements" value={emails.filter(e => e.category === 'Requirement').length} />
                 </div>
-                <button
-                    onClick={() => { resetForm(); setShowModal(true); }}
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
-                >
-                    <Plus size={18} />
-                    Add Email Record
-                </button>
+                {hasPermission('Email Documentation', 'Create') && (
+                    <button
+                        onClick={() => { resetForm(); setShowModal(true); }}
+                        className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
+                    >
+                        <Plus size={18} />
+                        Add Email Record
+                    </button>
+                )}
             </div>
 
             {/* Filters */}
@@ -313,12 +318,16 @@ const EmailDocumentation = () => {
                                 </div>
 
                                 <div className="flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                                    <button onClick={() => openEdit(email)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition">
-                                        <Edit3 size={18} />
-                                    </button>
-                                    <button onClick={() => handleDelete(email.emailId)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition">
-                                        <Trash2 size={18} />
-                                    </button>
+                                    {hasPermission('Email Documentation', 'Edit') && (
+                                        <button onClick={() => openEdit(email)} className="p-2 text-slate-400 hover:text-blue-600 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-lg transition">
+                                            <Edit3 size={18} />
+                                        </button>
+                                    )}
+                                    {hasPermission('Email Documentation', 'Delete') && (
+                                        <button onClick={() => handleDelete(email.emailId)} className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition">
+                                            <Trash2 size={18} />
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>
@@ -457,12 +466,14 @@ const EmailDocumentation = () => {
                                 >
                                     Cancel
                                 </button>
-                                <button
-                                    type="submit"
-                                    className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition-colors"
-                                >
-                                    {editingEmail ? 'Update Email' : 'Add Email'}
-                                </button>
+                                {(editingEmail ? hasPermission('Email Documentation', 'Edit') : hasPermission('Email Documentation', 'Create')) && (
+                                    <button
+                                        type="submit"
+                                        className="px-6 py-2 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600 transition-colors"
+                                    >
+                                        {editingEmail ? 'Update Email' : 'Add Email'}
+                                    </button>
+                                )}
                             </div>
                         </form>
                     </div>

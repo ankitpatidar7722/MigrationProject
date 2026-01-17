@@ -4,12 +4,15 @@ import { useParams, Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { MigrationIssue, IssueStatus, ModuleMaster } from '../types';
 import { Plus, Search, Filter, AlertCircle, Clock, CheckCircle, XCircle, MoreVertical, Loader2, ArrowLeft, Edit3, Trash2 } from 'lucide-react';
+import { LoadingOverlay } from '../components/LoadingOverlay';
 import { useRefresh } from '../services/RefreshContext';
+import { useAuth } from '../services/AuthContext';
 import { SearchableSelect } from '../components/SearchableSelect';
 
 const MigrationIssues: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
   const projectId = projectIdStr ? parseInt(projectIdStr, 10) : 0;
+  const { hasPermission } = useAuth();
 
   const [issues, setIssues] = useState<MigrationIssue[]>([]);
   const [loading, setLoading] = useState(true);
@@ -194,14 +197,7 @@ const MigrationIssues: React.FC = () => {
   );
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-8 h-8 animate-spin text-red-600" />
-          <p className="text-slate-500 dark:text-zinc-400">Loading issues...</p>
-        </div>
-      </div>
-    );
+    return <LoadingOverlay isVisible={true} message="Loading Issues..." />;
   }
 
   return (
@@ -216,13 +212,15 @@ const MigrationIssues: React.FC = () => {
             <p className="text-slate-500 dark:text-zinc-400 mt-1">Track and resolve data migration blockers.</p>
           </div>
         </div>
-        <button
-          onClick={() => { setEditingIssue(null); setShowModal(true); }}
-          className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium shadow-sm transition-all"
-        >
-          <Plus size={18} />
-          Report Issue
-        </button>
+        {hasPermission('Migration Issues', 'Create') && (
+          <button
+            onClick={() => { setEditingIssue(null); setShowModal(true); }}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium shadow-sm transition-all"
+          >
+            <Plus size={18} />
+            Report Issue
+          </button>
+        )}
       </div>
 
       <div className="flex flex-col md:flex-row gap-4">
@@ -281,24 +279,28 @@ const MigrationIssues: React.FC = () => {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                      <button
-                        onClick={() => {
-                          setEditingIssue(issue);
-                          setSelectedModule(issue.moduleName);
-                          setShowModal(true);
-                        }}
-                        className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                        title="Edit Issue"
-                      >
-                        <Edit3 size={16} />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(issue.issueId)}
-                        className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                        title="Delete Issue"
-                      >
-                        <Trash2 size={16} />
-                      </button>
+                      {hasPermission('Migration Issues', 'Edit') && (
+                        <button
+                          onClick={() => {
+                            setEditingIssue(issue);
+                            setSelectedModule(issue.moduleName);
+                            setShowModal(true);
+                          }}
+                          className="p-2 text-slate-400 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                          title="Edit Issue"
+                        >
+                          <Edit3 size={16} />
+                        </button>
+                      )}
+                      {hasPermission('Migration Issues', 'Delete') && (
+                        <button
+                          onClick={() => handleDelete(issue.issueId)}
+                          className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                          title="Delete Issue"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                     </div>
                   </td>
                 </tr>
@@ -402,14 +404,16 @@ const MigrationIssues: React.FC = () => {
                 </div>
                 <div className="pt-4 flex gap-3">
                   <button type="button" onClick={() => setShowModal(false)} className="flex-1 py-3 bg-slate-100 dark:bg-zinc-800 rounded-xl font-bold">Cancel</button>
-                  {editingIssue && (
+                  {editingIssue && hasPermission('Migration Issues', 'Create') && (
                     <button type="button" onClick={handleSaveAs} disabled={saving} className="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold shadow-lg shadow-emerald-500/20 transition-all disabled:opacity-50">
                       {saving ? 'Saving...' : 'Save As New'}
                     </button>
                   )}
-                  <button type="submit" disabled={saving} className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all disabled:opacity-50">
-                    {saving ? 'Saving...' : (editingIssue ? 'Update Issue' : 'Report Issue')}
-                  </button>
+                  {(editingIssue ? hasPermission('Migration Issues', 'Edit') : hasPermission('Migration Issues', 'Create')) && (
+                    <button type="submit" disabled={saving} className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold shadow-lg shadow-red-500/20 transition-all disabled:opacity-50">
+                      {saving ? 'Saving...' : (editingIssue ? 'Update Issue' : 'Report Issue')}
+                    </button>
+                  )}
                 </div>
               </form>
             </div>

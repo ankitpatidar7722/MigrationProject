@@ -2,8 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
 import { FieldMaster, ModuleGroup } from '../types';
 import { Plus, Trash2, Edit3, Save, X, Move, Check } from 'lucide-react';
+import { useAuth } from '../services/AuthContext';
 
 const FieldManager: React.FC = () => {
+  const { hasPermission } = useAuth();
   const [moduleGroups, setModuleGroups] = useState<ModuleGroup[]>([]); // Assuming we have this type, or will fetch from API
   const [selectedGroupId, setSelectedGroupId] = useState<number>(0);
   const [fields, setFields] = useState<FieldMaster[]>([]);
@@ -205,16 +207,18 @@ const FieldManager: React.FC = () => {
             <div className="bg-white dark:bg-zinc-900 rounded-2xl shadow-sm border border-slate-200 dark:border-zinc-800 overflow-hidden">
               <div className="p-4 border-b border-slate-100 dark:border-zinc-800 flex justify-between items-center">
                 <h2 className="font-bold text-lg">Fields ({fields.length})</h2>
-                <button
-                  disabled={selectedGroupId === 0}
-                  onClick={() => { setEditingField(null); setShowModal(true); }}
-                  className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${selectedGroupId === 0
-                    ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
-                    : 'bg-blue-600 text-white hover:bg-blue-700'
-                    }`}
-                >
-                  <Plus size={18} /> Add Field
-                </button>
+                {hasPermission('Fields', 'Create') && (
+                  <button
+                    disabled={selectedGroupId === 0}
+                    onClick={() => { setEditingField(null); setShowModal(true); }}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition ${selectedGroupId === 0
+                      ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                      : 'bg-blue-600 text-white hover:bg-blue-700'
+                      }`}
+                  >
+                    <Plus size={18} /> Add Field
+                  </button>
+                )}
               </div>
 
               <div className="overflow-x-auto">
@@ -264,18 +268,22 @@ const FieldManager: React.FC = () => {
                           />
                         </td>
                         <td className="p-4 text-right space-x-2">
-                          <button
-                            onClick={() => { setEditingField(field); setShowModal(true); }}
-                            className="p-2 text-slate-400 hover:text-blue-600 transition"
-                          >
-                            <Edit3 size={16} />
-                          </button>
-                          <button
-                            onClick={() => handleDelete(field.fieldId)}
-                            className="p-2 text-slate-400 hover:text-red-600 transition"
-                          >
-                            <Trash2 size={16} />
-                          </button>
+                          {hasPermission('Fields', 'Edit') && (
+                            <button
+                              onClick={() => { setEditingField(field); setShowModal(true); }}
+                              className="p-2 text-slate-400 hover:text-blue-600 transition"
+                            >
+                              <Edit3 size={16} />
+                            </button>
+                          )}
+                          {hasPermission('Fields', 'Delete') && (
+                            <button
+                              onClick={() => handleDelete(field.fieldId)}
+                              className="p-2 text-slate-400 hover:text-red-600 transition"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
                         </td>
                       </tr>
                     ))}
