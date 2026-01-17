@@ -38,6 +38,7 @@ public class MigraTrackDbContext : DbContext
     public DbSet<ModuleMaster> ModuleMasters { get; set; }
     public DbSet<ServerData> ServerData { get; set; }
     public DbSet<DatabaseDetail> DatabaseDetails { get; set; }
+    public DbSet<ManualConfiguration> ManualConfigurations { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -63,6 +64,7 @@ public class MigraTrackDbContext : DbContext
         modelBuilder.Entity<ModuleMaster>().ToTable("ModuleMaster");
         modelBuilder.Entity<ServerData>().ToTable("ServerData");
         modelBuilder.Entity<DatabaseDetail>().ToTable("DatabaseDetail");
+        modelBuilder.Entity<ManualConfiguration>().ToTable("ManualConfiguration");
 
         // Configure relationships and constraints
         modelBuilder.Entity<Project>()

@@ -60,6 +60,26 @@ public class Project : ISoftDelete
     
     public int DisplayOrder { get; set; }
 
+    public int? ServerIdDesktop { get; set; }
+
+    [ForeignKey("ServerIdDesktop")]
+    public ServerData? ServerDesktop { get; set; }
+
+    public int? DatabaseIdDesktop { get; set; }
+
+    [ForeignKey("DatabaseIdDesktop")]
+    public DatabaseDetail? DatabaseDesktop { get; set; }
+
+    public int? ServerIdWeb { get; set; }
+
+    [ForeignKey("ServerIdWeb")]
+    public ServerData? ServerWeb { get; set; }
+
+    public int? DatabaseIdWeb { get; set; }
+
+    [ForeignKey("DatabaseIdWeb")]
+    public DatabaseDetail? DatabaseWeb { get; set; }
+
     public int IsDeletedTransaction { get; set; }
 }
 

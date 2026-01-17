@@ -11,7 +11,8 @@ import {
   ProjectEmail,
   WebTable,
   ServerData,
-  DatabaseDetail
+  DatabaseDetail,
+  ManualConfiguration
 } from '../types';
 
 /**
@@ -527,6 +528,45 @@ export const api = {
 
     delete: async (id: number): Promise<void> => {
       const response = await fetch(`${BASE_URL}/WebTables/${id}`, {
+        method: 'DELETE'
+      });
+      return handleResponse<void>(response);
+    },
+  },
+  // ==================== MANUAL CONFIGURATION ====================
+  manualConfigurations: {
+    getByProject: async (projectId: number): Promise<ManualConfiguration[]> => {
+      const response = await fetch(`${BASE_URL}/ManualConfigurations/project/${projectId}`);
+      return handleResponse<ManualConfiguration[]>(response);
+    },
+
+    getById: async (id: number): Promise<ManualConfiguration> => {
+      const response = await fetch(`${BASE_URL}/ManualConfigurations/${id}`);
+      return handleResponse<ManualConfiguration>(response);
+    },
+
+    create: async (item: ManualConfiguration): Promise<ManualConfiguration> => {
+      const response = await fetch(`${BASE_URL}/ManualConfigurations`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+      });
+      return handleResponse<ManualConfiguration>(response);
+    },
+
+    update: async (id: number, item: ManualConfiguration): Promise<ManualConfiguration> => {
+      const response = await fetch(`${BASE_URL}/ManualConfigurations/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+      });
+      // Handle 204 No Content
+      if (response && (response as any).status === 204) return item;
+      return handleResponse<ManualConfiguration>(response);
+    },
+
+    delete: async (id: number): Promise<void> => {
+      const response = await fetch(`${BASE_URL}/ManualConfigurations/${id}`, {
         method: 'DELETE'
       });
       return handleResponse<void>(response);

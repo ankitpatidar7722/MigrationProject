@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { Project } from '../types';
+import { Project, ServerData, DatabaseDetail } from '../types';
 import { Plus, Search, ExternalLink, Calendar, Trash2, Loader2, Edit3, X, GripVertical, Users } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useRefresh } from '../services/RefreshContext';
@@ -22,6 +22,7 @@ import {
   rectSortingStrategy,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { SearchableSelect } from '../components/SearchableSelect';
 
 interface SortableProjectCardProps {
   project: Project;
@@ -125,6 +126,8 @@ const SortableProjectCard: React.FC<SortableProjectCardProps> = ({ project, stat
           </div>
         </div>
 
+
+
         <div className="mt-6 grid grid-cols-3 gap-2 text-[10px] font-medium text-slate-500 dark:text-zinc-500 border-t border-slate-100 dark:border-zinc-800 pt-4">
           <div>
             <p className="uppercase tracking-wider text-[9px] mb-0.5 opacity-70">Start</p>
@@ -188,6 +191,8 @@ const ProjectList: React.FC = () => {
     coordinatorEmail: ''
   });
   const [stats, setStats] = useState<Record<number, any>>({});
+  const [servers, setServers] = useState<ServerData[]>([]);
+  const [databases, setDatabases] = useState<DatabaseDetail[]>([]);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -204,6 +209,13 @@ const ProjectList: React.FC = () => {
     try {
       const data = await api.projects.getAll();
       setProjects(data);
+
+      const [serversData, dbsData] = await Promise.all([
+        api.serverData.getAll(),
+        api.databaseDetails.getAll()
+      ]);
+      setServers(serversData);
+      setDatabases(dbsData);
     } catch (err) {
       console.error('Error loading projects:', err);
     } finally {
@@ -273,7 +285,11 @@ const ProjectList: React.FC = () => {
         liveDate: newProject.liveDate ? new Date(newProject.liveDate).toISOString() : null,
         implementationCoordinator: newProject.implementationCoordinator || null,
         coordinatorEmail: newProject.coordinatorEmail || null,
-        displayOrder: newProject.projectId ? undefined : maxOrder + 1 // Add this if needed or rely on backend
+        displayOrder: newProject.projectId ? undefined : maxOrder + 1,
+        serverIdDesktop: newProject.serverIdDesktop || null,
+        databaseIdDesktop: newProject.databaseIdDesktop || null,
+        serverIdWeb: newProject.serverIdWeb || null,
+        databaseIdWeb: newProject.databaseIdWeb || null
       };
 
       if (newProject.projectId) {
@@ -324,7 +340,11 @@ const ProjectList: React.FC = () => {
       targetCompletionDate: project.targetCompletionDate ? project.targetCompletionDate.split('T')[0] : '',
       liveDate: project.liveDate ? project.liveDate.split('T')[0] : '',
       implementationCoordinator: project.implementationCoordinator || '',
-      coordinatorEmail: project.coordinatorEmail || ''
+      coordinatorEmail: project.coordinatorEmail || '',
+      serverIdDesktop: project.serverIdDesktop,
+      databaseIdDesktop: project.databaseIdDesktop,
+      serverIdWeb: project.serverIdWeb,
+      databaseIdWeb: project.databaseIdWeb
     });
     setShowModal(true);
   };
@@ -416,7 +436,7 @@ const ProjectList: React.FC = () => {
       {/* Create/Edit Project Modal - Same as before */}
       {showModal && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
-          <div className="bg-white dark:bg-zinc-900 w-full max-w-md rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+          <div className="bg-white dark:bg-zinc-900 w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="p-6 border-b border-slate-100 dark:border-zinc-800 flex items-center justify-between">
               <h2 className="text-xl font-bold">{newProject.projectId ? 'Edit Project' : 'New Client Project'}</h2>
               <button onClick={() => setShowModal(false)} className="text-slate-400 hover:text-slate-600 dark:hover:text-white">
@@ -444,6 +464,71 @@ const ProjectList: React.FC = () => {
                   className="w-full px-4 py-2.5 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px]"
                   placeholder="Summarize the migration scope..."
                 />
+              </div>
+
+              {/* Connection Details */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-xl border border-slate-100 dark:border-zinc-800">
+                <div className="col-span-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Desktop Environment</div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5">Desktop Server</label>
+                  <SearchableSelect
+                    value={newProject.serverIdDesktop || ''}
+                    onChange={(val) => setNewProject({
+                      ...newProject,
+                      serverIdDesktop: Number(val),
+                      databaseIdDesktop: undefined // Reset DB on server change
+                    })}
+                    options={servers.map(s => ({ label: s.serverName, value: s.serverId }))}
+                    placeholder="Select Server"
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5">Desktop Database</label>
+                  <SearchableSelect
+                    value={newProject.databaseIdDesktop || ''}
+                    onChange={(val) => setNewProject({ ...newProject, databaseIdDesktop: Number(val) })}
+                    disabled={!newProject.serverIdDesktop}
+                    options={databases
+                      .filter(d => d.serverId === newProject.serverIdDesktop && d.databaseCategory === 'DT')
+                      .map(d => ({ label: d.databaseName, value: d.databaseId }))}
+                    placeholder="Select Database"
+                    className="w-full"
+                  />
+                </div>
+
+                <div className="col-span-2 text-xs font-bold text-slate-400 uppercase tracking-wider mb-2 mt-2">Web Environment</div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5">Web Server</label>
+                  <SearchableSelect
+                    value={newProject.serverIdWeb || ''}
+                    onChange={(val) => setNewProject({
+                      ...newProject,
+                      serverIdWeb: Number(val),
+                      databaseIdWeb: undefined // Reset DB on server change
+                    })}
+                    options={servers.map(s => ({ label: s.serverName, value: s.serverId }))}
+                    placeholder="Select Server"
+                    className="w-full"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold mb-1.5">Web Database</label>
+                  <SearchableSelect
+                    value={newProject.databaseIdWeb || ''}
+                    onChange={(val) => setNewProject({ ...newProject, databaseIdWeb: Number(val) })}
+                    disabled={!newProject.serverIdWeb}
+                    options={databases
+                      .filter(d => d.serverId === newProject.serverIdWeb && d.databaseCategory === 'WT')
+                      .map(d => ({ label: d.databaseName, value: d.databaseId }))}
+                    placeholder="Select Database"
+                    className="w-full"
+                  />
+                </div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div>

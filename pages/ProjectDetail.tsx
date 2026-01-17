@@ -4,6 +4,7 @@ import { useParams, Link } from 'react-router-dom';
 import { storageService } from '../services/storageService';
 import {
   Database,
+  Server,
   ShieldCheck,
   AlertTriangle,
   Settings2,
@@ -16,9 +17,10 @@ import {
   Check,
   X,
   Copy,
-  ArrowLeft
+  ArrowLeft,
+  Wrench
 } from 'lucide-react';
-import { Project, DataTransferCheck, VerificationRecord, MigrationIssue, CustomizationPoint } from '../types';
+import { Project, DataTransferCheck, VerificationRecord, MigrationIssue, CustomizationPoint, ManualConfiguration } from '../types';
 import { api } from '../services/api';
 
 const ProjectDetail: React.FC = () => {
@@ -31,6 +33,7 @@ const ProjectDetail: React.FC = () => {
   const [verifications, setVerifications] = useState<VerificationRecord[]>([]);
   const [issues, setIssues] = useState<MigrationIssue[]>([]);
   const [customizations, setCustomizations] = useState<CustomizationPoint[]>([]);
+  const [manualConfigs, setManualConfigs] = useState<ManualConfiguration[]>([]);
   const [loading, setLoading] = useState(true);
 
   // Editing state
@@ -52,20 +55,41 @@ const ProjectDetail: React.FC = () => {
 
     const loadData = async () => {
       try {
-        const [projectsData, transfersData, verificationsData, issuesData, customizationsData] = await Promise.all([
-          storageService.getProjects(),
+        // 1. Load Projects first (Critical)
+        const projectsData = await storageService.getProjects();
+        const foundProject = projectsData.find(p => p.projectId === projectId);
+
+        if (!foundProject) {
+          setProject(null);
+          setLoading(false);
+          return;
+        }
+
+        setProject(foundProject);
+
+        // 2. Load other modules (Parallel)
+        const [transfersData, verificationsData, issuesData, customizationsData] = await Promise.all([
           storageService.getTransferChecks(projectId),
           storageService.getVerifications(projectId),
           storageService.getIssues(projectId),
           storageService.getCustomizations(projectId)
         ]);
 
-        const foundProject = projectsData.find(p => p.projectId === projectId);
-        setProject(foundProject || null);
         setTransfers(transfersData);
         setVerifications(verificationsData);
         setIssues(issuesData);
         setCustomizations(customizationsData);
+
+        // 3. Load Manual Configs (Non-Critical - Try/Catch)
+        try {
+          const manualConfigsData = await api.manualConfigurations.getByProject(projectId);
+          setManualConfigs(manualConfigsData || []);
+        } catch (configErr) {
+          console.error('Failed to load manual configurations:', configErr);
+          // Don't block the UI, just show empty list or error state if needed
+          setManualConfigs([]);
+        }
+
       } catch (err) {
         console.error('Error loading project data:', err);
       } finally {
@@ -145,6 +169,16 @@ const ProjectDetail: React.FC = () => {
       completed: customizations.filter(c => c.status === 'Completed').length,
       color: 'amber',
       path: 'customization'
+    },
+    {
+      id: 'manual-config',
+      title: 'Manual Configuration',
+      desc: 'Log manual maintenance & config work',
+      icon: <Wrench size={24} />,
+      count: manualConfigs.length,
+      completed: 0, // No status for manual config yet, or treat all as 'completed' if we want progress
+      color: 'purple',
+      path: 'manual-config'
     }
   ];
 
@@ -218,6 +252,41 @@ const ProjectDetail: React.FC = () => {
               )}
             </div>
             <p className="text-slate-500 dark:text-zinc-400 mt-1 max-w-2xl">{project.description}</p>
+
+            {/* Connection Info */}
+            <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6 p-4 bg-slate-50 dark:bg-zinc-800/50 rounded-2xl border border-slate-100 dark:border-zinc-800">
+              <div>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                  <Server size={14} /> Desktop Environment
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-[10px] text-slate-400 font-semibold mb-1">Server Name</div>
+                    <div className="font-medium text-slate-700 dark:text-zinc-200" title={project.serverDesktop?.serverName}>{project.serverDesktop?.serverName || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-slate-400 font-semibold mb-1">Database</div>
+                    <div className="font-medium text-blue-600" title={project.databaseDesktop?.databaseName}>{project.databaseDesktop?.databaseName || 'N/A'}</div>
+                  </div>
+                </div>
+              </div>
+
+              <div className="md:border-l border-slate-200 dark:border-zinc-700 md:pl-6">
+                <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-3 flex items-center gap-2">
+                  <Database size={14} /> Web Environment
+                </h3>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <div className="text-[10px] text-slate-400 font-semibold mb-1">Server Name</div>
+                    <div className="font-medium text-slate-700 dark:text-zinc-200" title={project.serverWeb?.serverName}>{project.serverWeb?.serverName || 'N/A'}</div>
+                  </div>
+                  <div>
+                    <div className="text-[10px] text-slate-400 font-semibold mb-1">Database</div>
+                    <div className="font-medium text-emerald-600" title={project.databaseWeb?.databaseName}>{project.databaseWeb?.databaseName || 'N/A'}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           <div className="flex items-center gap-2">
             <button className="p-2 text-slate-400 hover:text-slate-600 dark:hover:text-white transition-colors">

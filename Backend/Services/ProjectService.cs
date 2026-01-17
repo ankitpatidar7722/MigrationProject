@@ -29,6 +29,10 @@ public class ProjectService : IProjectService
     public async Task<IEnumerable<Project>> GetAllProjectsAsync()
     {
         return await _context.Projects
+            .Include(p => p.ServerDesktop)
+            .Include(p => p.DatabaseDesktop)
+            .Include(p => p.ServerWeb)
+            .Include(p => p.DatabaseWeb)
             .Where(p => p.IsActive)
             .OrderBy(p => p.DisplayOrder) // Changed to order by DisplayOrder
             .ThenByDescending(p => p.CreatedAt) // Fallback
@@ -37,7 +41,12 @@ public class ProjectService : IProjectService
 
     public async Task<Project?> GetProjectByIdAsync(long id)
     {
-        return await _context.Projects.FindAsync(id);
+        return await _context.Projects
+            .Include(p => p.ServerDesktop)
+            .Include(p => p.DatabaseDesktop)
+            .Include(p => p.ServerWeb)
+            .Include(p => p.DatabaseWeb)
+            .FirstOrDefaultAsync(p => p.ProjectId == id);
     }
 
     public async Task<Project> CreateProjectAsync(Project project)
@@ -57,6 +66,7 @@ public class ProjectService : IProjectService
 
     public async Task<Project?> UpdateProjectAsync(Project project)
     {
+        Console.WriteLine($"[UpdateProjectAsync] Updating Project {project.ProjectId}. ServerIdDesktop: {project.ServerIdDesktop}, DBIdDesktop: {project.DatabaseIdDesktop}");
         var existing = await _context.Projects.FindAsync(project.ProjectId);
         if (existing == null)
             return null;
@@ -73,6 +83,13 @@ public class ProjectService : IProjectService
         existing.ImplementationCoordinator = project.ImplementationCoordinator;
         existing.CoordinatorEmail = project.CoordinatorEmail;
         existing.DisplayOrder = project.DisplayOrder; // Update DisplayOrder
+        
+        // Update Connection Fields
+        existing.ServerIdDesktop = project.ServerIdDesktop;
+        existing.DatabaseIdDesktop = project.DatabaseIdDesktop;
+        existing.ServerIdWeb = project.ServerIdWeb;
+        existing.DatabaseIdWeb = project.DatabaseIdWeb;
+
         existing.UpdatedAt = DateTime.Now;
 
         await _context.SaveChangesAsync();

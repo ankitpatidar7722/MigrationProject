@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SearchableSelect } from './SearchableSelect';
 import { FieldMaster } from '../types';
 import { api } from '../services/api';
 
@@ -80,18 +81,15 @@ const DynamicFormRenderer: React.FC<DynamicFormRendererProps> = ({
         // Priority 1: If it has a Lookup Key, it's a Dropdown
         if (field.selectQueryDb && field.selectQueryDb.length > 0) {
             return (
-                <select
+                <SearchableSelect
                     name={field.fieldName}
                     required={field.isRequired}
                     value={formData[field.fieldName] || ''}
-                    onChange={(e) => handleChange(field.fieldName, e.target.value)}
-                    className={`${commonClasses} appearance-none bg-no-repeat bg-[right_1rem_center]`}
-                >
-                    <option value="">Select {field.fieldLabel}</option>
-                    {(lookups[field.selectQueryDb] || []).map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                    ))}
-                </select>
+                    onChange={(val) => handleChange(field.fieldName, val)}
+                    options={lookups[field.selectQueryDb] || []}
+                    placeholder={`Select ${field.fieldLabel}`}
+                    className="w-full"
+                />
             );
         }
 

@@ -44,7 +44,15 @@ export interface Project {
   isActive: boolean;
   createdAt: string;
   updatedAt?: string;
-  displayOrder: number;
+  displayOrder?: number;
+  serverIdDesktop?: number;
+  databaseIdDesktop?: number;
+  serverIdWeb?: number;
+  databaseIdWeb?: number;
+  serverDesktop?: ServerData;
+  databaseDesktop?: DatabaseDetail;
+  serverWeb?: ServerData;
+  databaseWeb?: DatabaseDetail;
 }
 
 export interface ModuleGroup {
@@ -217,3 +225,13 @@ export interface DatabaseDetail {
 }
 
 
+
+export interface ManualConfiguration {
+  id: number;
+  projectId: number;
+  moduleName: string;
+  subModuleName: string;
+  description: string;
+  createdAt: string;
+  updatedAt?: string;
+}

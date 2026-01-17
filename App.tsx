@@ -41,6 +41,7 @@ import VerificationList from './pages/VerificationList';
 import MigrationIssues from './pages/MigrationIssues';
 import CustomizationPoints from './pages/CustomizationPoints';
 import EmailDocumentation from './pages/EmailDocumentation';
+import ManualConfiguration from './pages/ManualConfiguration';
 import { api } from './services/api';
 import { ModuleMaster } from './types';
 import { RefreshProvider, useRefresh } from './services/RefreshContext';
@@ -123,6 +124,7 @@ const App: React.FC = () => {
               <Route path="/projects/:projectId/verification" element={<VerificationList />} />
               <Route path="/projects/:projectId/issues" element={<MigrationIssues />} />
               <Route path="/projects/:projectId/customization" element={<CustomizationPoints />} />
+              <Route path="/projects/:projectId/manual-config" element={<ManualConfiguration />} />
               <Route path="/projects/:projectId/emails" element={<EmailDocumentation />} />
               <Route path="/admin/fields" element={<FieldManager />} />
               <Route path="/admin/modules" element={<ModuleMasterManager />} />
@@ -167,6 +169,7 @@ const Breadcrumb: React.FC = () => {
       'verification': 'Verification List',
       'issues': 'Migration Issues',
       'customization': 'Customization Points',
+      'manual-config': 'Manual Configuration',
       'emails': 'Email Documentation',
       'projects': 'Projects'
     };

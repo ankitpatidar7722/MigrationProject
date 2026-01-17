@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import { MigrationIssue, IssueStatus, ModuleMaster } from '../types';
 import { Plus, Search, Filter, AlertCircle, Clock, CheckCircle, XCircle, MoreVertical, Loader2, ArrowLeft, Edit3, Trash2 } from 'lucide-react';
 import { useRefresh } from '../services/RefreshContext';
+import { SearchableSelect } from '../components/SearchableSelect';
 
 const MigrationIssues: React.FC = () => {
   const { projectId: projectIdStr } = useParams<{ projectId: string }>();
@@ -21,6 +22,9 @@ const MigrationIssues: React.FC = () => {
   // Module Master State
   const [moduleMasters, setModuleMasters] = useState<ModuleMaster[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>('');
+  const [selectedSubModule, setSelectedSubModule] = useState<string>('');
+  const [priority, setPriority] = useState<string>('Medium');
+  const [status, setStatus] = useState<IssueStatus>('Open');
 
   const { registerRefresh } = useRefresh();
 
@@ -49,8 +53,14 @@ const MigrationIssues: React.FC = () => {
   useEffect(() => {
     if (editingIssue) {
       setSelectedModule(editingIssue.moduleName);
+      setSelectedSubModule(editingIssue.subModuleName);
+      setPriority(editingIssue.priority);
+      setStatus(editingIssue.status);
     } else {
       setSelectedModule('');
+      setSelectedSubModule('');
+      setPriority('Medium');
+      setStatus('Open');
     }
   }, [editingIssue]);
 
@@ -320,33 +330,26 @@ const MigrationIssues: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold mb-1.5">Module</label>
-                    <select
+                    <SearchableSelect
                       name="moduleName"
                       value={selectedModule}
-                      onChange={(e) => setSelectedModule(e.target.value)}
+                      onChange={(val) => setSelectedModule(String(val))}
+                      options={uniqueModules.map(m => ({ label: m, value: m }))}
+                      placeholder="Select Module"
                       required
-                      className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none"
-                    >
-                      <option value="" disabled hidden>Select Module</option>
-                      {uniqueModules.map(m => (
-                        <option key={m} value={m}>{m}</option>
-                      ))}
-                    </select>
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold mb-1.5">Sub Module</label>
-                    <select
+                    <SearchableSelect
                       name="subModuleName"
-                      defaultValue={editingIssue?.subModuleName}
+                      value={selectedSubModule}
+                      onChange={(val) => setSelectedSubModule(String(val))}
+                      options={availableSubModules.map(sm => ({ label: sm, value: sm }))}
+                      placeholder="Select Sub-Module"
                       required
                       disabled={!selectedModule}
-                      className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl focus:ring-2 focus:ring-red-500 outline-none disabled:opacity-50"
-                    >
-                      <option value="" disabled hidden>Select Sub-Module</option>
-                      {availableSubModules.map(sm => (
-                        <option key={sm} value={sm}>{sm}</option>
-                      ))}
-                    </select>
+                    />
                   </div>
                 </div>
                 <div>
@@ -360,21 +363,33 @@ const MigrationIssues: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-semibold mb-1.5">Priority</label>
-                    <select name="priority" defaultValue={editingIssue?.priority || 'Medium'} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-red-500">
-                      <option value="Low">Low</option>
-                      <option value="Medium">Medium</option>
-                      <option value="High">High</option>
-                      <option value="Critical">Critical</option>
-                    </select>
+                    <SearchableSelect
+                      name="priority"
+                      value={priority}
+                      onChange={(val) => setPriority(String(val))}
+                      options={[
+                        { label: 'Low', value: 'Low' },
+                        { label: 'Medium', value: 'Medium' },
+                        { label: 'High', value: 'High' },
+                        { label: 'Critical', value: 'Critical' }
+                      ]}
+                      placeholder="Select Priority"
+                    />
                   </div>
                   <div>
                     <label className="block text-sm font-semibold mb-1.5">Current Status</label>
-                    <select name="status" defaultValue={editingIssue?.status || 'Open'} className="w-full px-4 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-xl outline-none focus:ring-2 focus:ring-red-500">
-                      <option value="Open">Open</option>
-                      <option value="In Progress">In Progress</option>
-                      <option value="Resolved">Resolved</option>
-                      <option value="Closed">Closed</option>
-                    </select>
+                    <SearchableSelect
+                      name="status"
+                      value={status}
+                      onChange={(val) => setStatus(val as IssueStatus)}
+                      options={[
+                        { label: 'Open', value: 'Open' },
+                        { label: 'In Progress', value: 'In Progress' },
+                        { label: 'Resolved', value: 'Resolved' },
+                        { label: 'Closed', value: 'Closed' }
+                      ]}
+                      placeholder="Select Status"
+                    />
                   </div>
                 </div>
                 <div>

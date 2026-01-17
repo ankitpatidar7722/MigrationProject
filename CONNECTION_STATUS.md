@@ -30,7 +30,7 @@
 
 ```
 Frontend (React)               Backend (.NET)                Database (SQL Server)
-localhost:5173          →      localhost:5000         →      DESKTOP-533GP0U
+localhost:3000          →      localhost:5000         →      DESKTOP-533GP0U
                                                              MigraTrackDB
 
 ┌─────────────┐         HTTP    ┌──────────────┐    SQL     ┌────────────────┐
@@ -45,7 +45,7 @@ localhost:5173          →      localhost:5000         →      DESKTOP-533GP0U
 
 ### Test 1: Open Browser Developer Console
 
-1. Navigate to http://localhost:5173  
+1. Navigate to http://localhost:3000  
 2. Press `F12` to open DevTools  
 3. Go to **Console** tab  
 4. Type:
@@ -104,13 +104,13 @@ storageService.getProjects().then(projects => {
 |-----------|--------|-----|
 | **Database** | ✅ Running | DESKTOP-533GP0U/MigraTrackDB |
 | **Backend API** | ✅ Running | http://localhost:5000 |
-| **Frontend** | ✅ Running | http://localhost:5173 |
+| **Frontend** | ✅ Running | http://localhost:3000 |
 | **Connection** | ✅ Connected | API ↔ Database |
 | **Data Flow** | ✅ Working | Frontend → Backend → SQL Server |
 
 ## 🚀 Next Steps:
 
-1. **Test the application** - Navigate to http://localhost:5173
+1. **Test the application** - Navigate to http://localhost:3000
 2. **View Projects** - Click "Clients" - should load from SQL Server
 3. **Create new data** - Try adding a project - saves to SQL Server
 4. **Verify in SSMS** - Check data in SQL Server Management Studio
