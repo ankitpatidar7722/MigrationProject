@@ -54,8 +54,14 @@ import { UserProfileDropdown } from './components/UserProfileDropdown';
 import { ThemeToggle, LanguageToggle } from './components/HeaderControls';
 import { LoadingOverlay } from './components/LoadingOverlay';
 
+// Modules to hide from sidebar
+const HIDDEN_MODULES = ['Fields', 'Modules'];
+
 // Re-export AppContext if needed by legacy components, but try to use AuthContext now
 export const AppContext = React.createContext<any>(null);
+
+// ...
+
 
 const RefreshButton: React.FC = () => {
   const { triggerRefresh, isRefreshing } = useRefresh();
@@ -183,7 +189,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
               </Link>
             )}
 
-            {(user?.role === 'Admin' || hasPermission('Fields', 'View')) && (
+            {(user?.role === 'Admin' || hasPermission('Fields', 'View')) && !HIDDEN_MODULES.includes('Fields') && (
               <Link to="/admin/fields" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive('/admin/fields') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
                 <Settings size={20} />
                 <span className="text-[10px] mt-1 font-medium">{t('Fields')}</span>

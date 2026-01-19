@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import { useAuth } from '../services/AuthContext';
 import { DataTransferCheck, Status, ModuleMaster, WebTable, FieldMaster } from '../types';
 import { Plus, Search, Filter, Trash2, Edit3, Download, Check, Loader2, ArrowLeft } from 'lucide-react';
+import DynamicFormRenderer from '../components/DynamicFormRenderer';
 import { LoadingOverlay } from '../components/LoadingOverlay';
 import { useRefresh } from '../services/RefreshContext';
 import { useLanguage } from '../services/LanguageContext';
@@ -28,6 +29,10 @@ const TransferChecks: React.FC = () => {
   const [moduleMasters, setModuleMasters] = useState<ModuleMaster[]>([]);
   const [webTables, setWebTables] = useState<WebTable[]>([]);
   const [selectedModule, setSelectedModule] = useState<string>('');
+  const [selectedSubModule, setSelectedSubModule] = useState<string>('');
+  const [selectedTableDesktop, setSelectedTableDesktop] = useState<string>('');
+  const [selectedTableWeb, setSelectedTableWeb] = useState<string>('');
+  const [selectedStatus, setSelectedStatus] = useState<Status>('Pending');
 
   // Field Master State
   const [fields, setFields] = useState<FieldMaster[]>([]);
@@ -75,8 +80,16 @@ const TransferChecks: React.FC = () => {
   useEffect(() => {
     if (editingItem) {
       setSelectedModule(editingItem.moduleName);
+      setSelectedSubModule(editingItem.subModuleName);
+      setSelectedTableDesktop(editingItem.tableNameDesktop);
+      setSelectedTableWeb(editingItem.tableNameWeb);
+      setSelectedStatus(editingItem.status);
     } else {
       setSelectedModule('');
+      setSelectedSubModule('');
+      setSelectedTableDesktop('');
+      setSelectedTableWeb('');
+      setSelectedStatus('Pending');
     }
   }, [editingItem]);
 
@@ -98,6 +111,11 @@ const TransferChecks: React.FC = () => {
 
   const distinctDesktopTables = Array.from(new Set(availableTables.map(t => t.desktopTableName).filter(Boolean)));
   const distinctWebTables = Array.from(new Set(availableTables.map(t => t.tableName).filter(Boolean)));
+
+  // Find group ID for Data Transfer Checks
+  const targetGroupId = useMemo(() => {
+    return moduleMasters.find(m => m.moduleName === 'Data Transfer Checks')?.groupIndex;
+  }, [moduleMasters]);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -197,7 +215,8 @@ const TransferChecks: React.FC = () => {
     const nextStatus: Record<Status, Status> = {
       'Not Started': 'Pending',
       'Pending': 'Completed',
-      'Completed': 'Not Started'
+      'Completed': 'No Data',
+      'No Data': 'Not Started'
     };
     const updated = { ...item, status: nextStatus[item.status], isCompleted: nextStatus[item.status] === 'Completed' };
     try {
@@ -287,9 +306,10 @@ const TransferChecks: React.FC = () => {
               className="px-3 py-2 bg-slate-50 dark:bg-zinc-800 border-none rounded-lg text-sm font-medium outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="All">{t('all_statuses')}</option>
-              <option value="Running">Running</option>
+              <option value="Not Started">Not Started</option>
+              <option value="Pending">Pending</option>
               <option value="Completed">Completed</option>
-              <option value="Failed">Failed</option>
+              <option value="No Data">No Data</option>
             </select>
             <button className="flex items-center gap-2 px-3 py-2 text-slate-600 dark:text-zinc-400 hover:bg-slate-50 dark:hover:bg-zinc-800 rounded-lg transition-colors border border-slate-200 dark:border-zinc-800">
               <Download size={18} />
@@ -315,7 +335,7 @@ const TransferChecks: React.FC = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
-              {items.length === 0 ? (
+              {filtered.length === 0 ? (
                 <tr>
                   <td colSpan={10} className="px-6 py-12 text-center text-slate-400">
                     <div className="flex flex-col items-center justify-center gap-3">
@@ -327,7 +347,7 @@ const TransferChecks: React.FC = () => {
                   </td>
                 </tr>
               ) : (
-                items.map((item) => {
+                filtered.map((item) => {
                   const diff = calculateDiff(item.recordCountDesktop, item.recordCountWeb);
                   const isMatch = diff === 0 && item.recordCountDesktop > 0;
 
@@ -349,14 +369,13 @@ const TransferChecks: React.FC = () => {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${isMatch
-                          ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400'
-                          : item.status === 'Running'
-                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
-                            : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
+                        <span className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold ${item.status === 'Completed' ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400' :
+                          item.status === 'Not Started' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' :
+                            item.status === 'No Data' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400' :
+                              'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
                           }`}>
-                          {isMatch && <Check size={12} />}
-                          {isMatch ? t('completed') : item.status}
+                          {item.status === 'Completed' && <Check size={12} />}
+                          {item.status}
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right">
@@ -436,7 +455,8 @@ const TransferChecks: React.FC = () => {
                   <select
                     name="subModuleName"
                     required
-                    defaultValue={editingItem?.subModuleName}
+                    value={selectedSubModule}
+                    onChange={(e) => setSelectedSubModule(e.target.value)}
                     className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
                   >
                     <option value="">Select Sub Module</option>
@@ -465,7 +485,8 @@ const TransferChecks: React.FC = () => {
                   <select
                     name="tableNameDesktop"
                     required={isDesktopTableRequired}
-                    defaultValue={editingItem?.tableNameDesktop}
+                    value={selectedTableDesktop}
+                    onChange={(e) => setSelectedTableDesktop(e.target.value)}
                     className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-sm"
                   >
                     <option value="">Select Table</option>
@@ -482,7 +503,8 @@ const TransferChecks: React.FC = () => {
                   <select
                     name="tableNameWeb"
                     required={isWebTableRequired}
-                    defaultValue={editingItem?.tableNameWeb}
+                    value={selectedTableWeb}
+                    onChange={(e) => setSelectedTableWeb(e.target.value)}
                     className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all font-mono text-sm"
                   >
                     <option value="">Select Table</option>
@@ -522,13 +544,19 @@ const TransferChecks: React.FC = () => {
                   </label>
                   <select
                     name="status"
-                    defaultValue={editingItem?.status || 'Pending'}
-                    className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    value={selectedStatus}
+                    onChange={(e) => setSelectedStatus(e.target.value as Status)}
+                    className={`w-full px-3 py-2.5 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all ${selectedStatus === 'Completed' ? 'bg-emerald-500 text-white' :
+                      selectedStatus === 'Not Started' ? 'bg-red-500 text-white' :
+                        selectedStatus === 'No Data' ? 'bg-blue-500 text-white' :
+                          selectedStatus === 'Pending' ? 'bg-orange-500 text-white' :
+                            'bg-slate-50 dark:bg-zinc-800'
+                      }`}
                   >
-                    <option value="Pending">Pending</option>
-                    <option value="Running">Running</option>
-                    <option value="Completed">Completed</option>
-                    <option value="Failed">Failed</option>
+                    <option value="Not Started" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-zinc-100">Not Started</option>
+                    <option value="Pending" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-zinc-100">Pending</option>
+                    <option value="Completed" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-zinc-100">Completed</option>
+                    <option value="No Data" className="bg-white text-slate-900 dark:bg-zinc-900 dark:text-zinc-100">No Data</option>
                   </select>
                 </div>
 
@@ -543,6 +571,28 @@ const TransferChecks: React.FC = () => {
                     className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all resize-none"
                   ></textarea>
                 </div>
+
+                {/* Dynamic Fields Section */}
+                {fields.filter(f =>
+                  f.isActive &&
+                  f.isDisplay &&
+                  f.moduleGroupId === targetGroupId &&
+                  !['moduleName', 'subModuleName', 'condition', 'tableNameDesktop', 'tableNameWeb', 'recordCountDesktop', 'recordCountWeb', 'status', 'comments'].includes(f.fieldName)
+                ).map(field => (
+                  <div key={field.fieldId} className="space-y-2 col-span-2 md:col-span-1">
+                    <label className="text-sm font-semibold text-slate-700 dark:text-zinc-300">
+                      {field.fieldLabel} {field.isRequired && <span className="text-red-500">*</span>}
+                    </label>
+                    <input
+                      type={field.dataType === 'int' || field.dataType === 'decimal' ? 'number' : 'text'}
+                      name={field.fieldName}
+                      required={field.isRequired}
+                      placeholder={field.placeholderText || field.fieldLabel}
+                      className="w-full px-3 py-2.5 bg-slate-50 dark:bg-zinc-800 border border-slate-200 dark:border-zinc-700 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none transition-all"
+                    />
+                    {field.helpText && <p className="text-xs text-slate-500">{field.helpText}</p>}
+                  </div>
+                ))}
               </div>
 
               <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-zinc-800">

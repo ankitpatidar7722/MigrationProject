@@ -154,7 +154,7 @@ export interface CustomizationPoint {
 }
 
 // Legacy types preserved for compatibility
-export type Status = 'Not Started' | 'Pending' | 'Completed';
+export type Status = 'Not Started' | 'Pending' | 'Completed' | 'No Data';
 export type VerificationStatus = 'Pending' | 'Correct' | 'Incorrect' | 'Re-verify';
 export type IssueStatus = 'Open' | 'In Progress' | 'Resolved' | 'Closed';
 export type Priority = 'Low' | 'Medium' | 'High' | 'Critical';

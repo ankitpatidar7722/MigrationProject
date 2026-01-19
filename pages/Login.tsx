@@ -26,7 +26,7 @@ const Login: React.FC = () => {
         userId: rawUser.userId || rawUser.UserId,
         username: rawUser.username || rawUser.Username,
         role: rawUser.role || rawUser.Role,
-        permissions: response.Permissions || rawUser.permissions || rawUser.Permissions
+        permissions: rawUser.permissions || rawUser.Permissions
       };
 
       login(userData as any, response.token || response.Token);

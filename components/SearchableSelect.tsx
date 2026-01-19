@@ -109,7 +109,7 @@ export const SearchableSelect: React.FC<SearchableSelectProps> = ({
                         </div>
                     )}
                     <ChevronDown size={16} className={`text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-                    {name && <input type="hidden" name={name} value={value || ''} />}
+                    {name ? <input type="hidden" name={name} value={value || ''} /> : null}
                 </div>
             </div>
 
