@@ -21,10 +21,12 @@ import {
   Mail,
   Table,
   Server,
-  Shield
+  Shield,
+  Code
 } from 'lucide-react';
 
 import Dashboard from './pages/Dashboard';
+import QuickWorkPage from './pages/QuickWork';
 import ProjectList from './pages/ProjectList';
 import ProjectDetail from './pages/ProjectDetail';
 import DynamicModulePage from './pages/DynamicModulePage';
@@ -55,7 +57,7 @@ import { ThemeToggle, LanguageToggle } from './components/HeaderControls';
 import { LoadingOverlay } from './components/LoadingOverlay';
 
 // Modules to hide from sidebar
-const HIDDEN_MODULES = ['Fields', 'Modules'];
+const HIDDEN_MODULES = ['Fields'];
 
 // Re-export AppContext if needed by legacy components, but try to use AuthContext now
 export const AppContext = React.createContext<any>(null);
@@ -106,7 +108,8 @@ const Breadcrumb: React.FC = () => {
       'webtables': 'Web Tables',
       'databases': 'Databases',
       'fields': 'Fields',
-      'modules': 'Modules'
+      'modules': 'Modules',
+      'quick-work': 'Quick Work'
     };
     return nameMap[page] || page.replace('-', ' ');
   };
@@ -179,6 +182,11 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
             <Link to="/projects" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${location.pathname.startsWith('/projects') && !projectId ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
               <Users size={20} />
               <span className="text-[10px] mt-1 font-medium">{t('Projects')}</span>
+            </Link>
+
+            <Link to="/quick-work" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive('/quick-work') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+              <Code size={20} />
+              <span className="text-[10px] mt-1 font-medium text-center leading-tight">Quick Work</span>
             </Link>
 
             {/* Admin Only Link */}
@@ -373,6 +381,11 @@ const App: React.FC = () => {
                             <DatabaseManager />
                           </ProtectedRoute>
                         } />
+
+                        <Route path="/quick-work" element={
+                          <QuickWorkPage />
+                        } />
+
                         <Route path="/projects/:projectId/module/:moduleName" element={<DynamicModulePage />} />
 
                         <Route path="*" element={<Navigate to="/" replace />} />

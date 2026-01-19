@@ -283,3 +283,14 @@ export interface ExcelData {
   uploadedBy?: number;
   uploadedAt: string;
 }
+
+export interface QuickWork {
+  id: number;
+  moduleName: string;
+  subModuleName: string;
+  tableName: string;
+  description: string;
+  sqlQuery: string;
+  createdAt?: string;
+  updatedAt?: string;
+}

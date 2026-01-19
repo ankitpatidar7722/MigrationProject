@@ -14,7 +14,8 @@ import {
   DatabaseDetail,
   ManualConfiguration,
   ExcelData,
-  User
+  User,
+  QuickWork
 } from '../types';
 
 /**
@@ -644,6 +645,44 @@ export const api = {
 
     delete: async (id: number): Promise<void> => {
       const response = await fetch(`${BASE_URL}/Users/${id}`, {
+        method: 'DELETE'
+      });
+      return handleResponse<void>(response);
+    },
+  },
+
+  // ==================== QUICK WORKS ====================
+  quickWorks: {
+    getAll: async (): Promise<QuickWork[]> => {
+      const response = await fetch(`${BASE_URL}/QuickWorks`);
+      return handleResponse<QuickWork[]>(response);
+    },
+
+    getById: async (id: number): Promise<QuickWork> => {
+      const response = await fetch(`${BASE_URL}/QuickWorks/${id}`);
+      return handleResponse<QuickWork>(response);
+    },
+
+    create: async (item: Partial<QuickWork>): Promise<QuickWork> => {
+      const response = await fetch(`${BASE_URL}/QuickWorks`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+      });
+      return handleResponse<QuickWork>(response);
+    },
+
+    update: async (id: number, item: Partial<QuickWork>): Promise<QuickWork> => {
+      const response = await fetch(`${BASE_URL}/QuickWorks/${id}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(item),
+      });
+      return handleResponse<QuickWork>(response);
+    },
+
+    delete: async (id: number): Promise<void> => {
+      const response = await fetch(`${BASE_URL}/QuickWorks/${id}`, {
         method: 'DELETE'
       });
       return handleResponse<void>(response);

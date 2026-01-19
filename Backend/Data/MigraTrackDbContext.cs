@@ -41,6 +41,7 @@ public class MigraTrackDbContext : DbContext
     public DbSet<DatabaseDetail> DatabaseDetails { get; set; }
     public DbSet<ManualConfiguration> ManualConfigurations { get; set; }
     public DbSet<UserPermission> UserPermissions { get; set; }
+    public DbSet<QuickWork> QuickWorks { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
