@@ -36,3 +36,4 @@ yarn-error.log*
 bin/
 obj/
 *.user
+Backend/publish/
