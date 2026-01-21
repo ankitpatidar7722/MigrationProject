@@ -1,0 +1,4 @@
+ALTER TABLE CustomizationPoints ALTER COLUMN RequestedBy NVARCHAR(200) NULL;
+GO
+ALTER TABLE CustomizationPoints ALTER COLUMN RequirementId NVARCHAR(50) NULL;
+GO

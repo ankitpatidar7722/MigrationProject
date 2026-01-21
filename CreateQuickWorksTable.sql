@@ -1,0 +1,11 @@
+CREATE TABLE QuickWorks (
+    Id INT IDENTITY(1,1) PRIMARY KEY,
+    ModuleName NVARCHAR(200),
+    SubModuleName NVARCHAR(200),
+    TableName NVARCHAR(200),
+    Description NVARCHAR(MAX),
+    SqlQuery NVARCHAR(MAX),
+    CreatedAt DATETIME2 NOT NULL DEFAULT GETDATE(),
+    UpdatedAt DATETIME2 NOT NULL DEFAULT GETDATE()
+);
+GO
