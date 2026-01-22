@@ -176,78 +176,80 @@ const ModuleMasterManager: React.FC = () => {
             </div>
 
             <div className="bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 rounded-2xl overflow-hidden shadow-sm">
-                <table className="w-full text-left border-collapse">
-                    <thead>
-                        <tr className="bg-slate-50 dark:bg-zinc-800/50 text-slate-500 dark:text-zinc-400 text-xs uppercase tracking-wider">
-                            <th className="px-6 py-4 font-semibold">Module Name</th>
-                            <th className="px-6 py-4 font-semibold">Sub Module</th>
-                            <th
-                                className="px-6 py-4 font-semibold cursor-pointer hover:text-blue-600 transition-colors select-none"
-                                onClick={() => handleSort('groupIndex')}
-                            >
-                                <div className="flex items-center gap-1">
-                                    Group Index
-                                    {sortConfig.key === 'groupIndex' && (
-                                        <span className="text-blue-600">
-                                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
-                                        </span>
-                                    )}
-                                </div>
-                            </th>
-                            <th className="px-6 py-4 font-semibold text-right">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
-                        {loading ? (
-                            <tr>
-                                <td colSpan={4} className="px-6 py-12 text-center">
-                                    <div className="flex flex-col items-center gap-2">
-                                        <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-                                        <span className="text-sm text-slate-500">Loading modules...</span>
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[640px]">
+                        <thead>
+                            <tr className="bg-slate-50 dark:bg-zinc-800/50 text-slate-500 dark:text-zinc-400 text-xs uppercase tracking-wider">
+                                <th className="px-4 sm:px-6 py-4 font-semibold">Module Name</th>
+                                <th className="px-4 sm:px-6 py-4 font-semibold">Sub Module</th>
+                                <th
+                                    className="px-4 sm:px-6 py-4 font-semibold cursor-pointer hover:text-blue-600 transition-colors select-none"
+                                    onClick={() => handleSort('groupIndex')}
+                                >
+                                    <div className="flex items-center gap-1">
+                                        Group Index
+                                        {sortConfig.key === 'groupIndex' && (
+                                            <span className="text-blue-600">
+                                                {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                                            </span>
+                                        )}
                                     </div>
-                                </td>
+                                </th>
+                                <th className="px-4 sm:px-6 py-4 font-semibold text-right">Actions</th>
                             </tr>
-                        ) : sortedModules.length === 0 ? (
-                            <tr>
-                                <td colSpan={4} className="px-6 py-12 text-center text-slate-500">
-                                    No modules found.
-                                </td>
-                            </tr>
-                        ) : (
-                            sortedModules.map((module) => (
-                                <tr key={module.moduleId} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
-                                    <td className="px-6 py-4 font-medium">{module.moduleName}</td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-zinc-400">{module.subModuleName}</td>
-                                    <td className="px-6 py-4 text-slate-600 dark:text-zinc-400">
-                                        <span className="px-2 py-1 bg-slate-100 dark:bg-zinc-800 rounded text-xs font-mono font-bold">
-                                            {module.groupIndex}
-                                        </span>
-                                    </td>
-                                    <td className="px-6 py-4 text-right">
-                                        <div className="flex items-center justify-end gap-2">
-                                            {hasPermission('Module', 'Edit') && (
-                                                <button
-                                                    onClick={() => handleEdit(module)}
-                                                    className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
-                                                >
-                                                    <Edit3 size={16} />
-                                                </button>
-                                            )}
-                                            {hasPermission('Module', 'Delete') && (
-                                                <button
-                                                    onClick={() => handleDelete(module.moduleId)}
-                                                    className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                                                >
-                                                    <Trash2 size={16} />
-                                                </button>
-                                            )}
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 dark:divide-zinc-800">
+                            {loading ? (
+                                <tr>
+                                    <td colSpan={4} className="px-4 sm:px-6 py-12 text-center">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                                            <span className="text-sm text-slate-500">Loading modules...</span>
                                         </div>
                                     </td>
                                 </tr>
-                            ))
-                        )}
-                    </tbody>
-                </table>
+                            ) : sortedModules.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="px-4 sm:px-6 py-12 text-center text-slate-500">
+                                        No modules found.
+                                    </td>
+                                </tr>
+                            ) : (
+                                sortedModules.map((module) => (
+                                    <tr key={module.moduleId} className="hover:bg-slate-50 dark:hover:bg-zinc-800/50 transition-colors">
+                                        <td className="px-4 sm:px-6 py-4 font-medium">{module.moduleName}</td>
+                                        <td className="px-4 sm:px-6 py-4 text-slate-600 dark:text-zinc-400">{module.subModuleName}</td>
+                                        <td className="px-4 sm:px-6 py-4 text-slate-600 dark:text-zinc-400">
+                                            <span className="px-2 py-1 bg-slate-100 dark:bg-zinc-800 rounded text-xs font-mono font-bold">
+                                                {module.groupIndex}
+                                            </span>
+                                        </td>
+                                        <td className="px-4 sm:px-6 py-4 text-right">
+                                            <div className="flex items-center justify-end gap-2">
+                                                {hasPermission('Module', 'Edit') && (
+                                                    <button
+                                                        onClick={() => handleEdit(module)}
+                                                        className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-lg transition-colors"
+                                                    >
+                                                        <Edit3 size={16} />
+                                                    </button>
+                                                )}
+                                                {hasPermission('Module', 'Delete') && (
+                                                    <button
+                                                        onClick={() => handleDelete(module.moduleId)}
+                                                        className="p-2 text-slate-400 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                                                    >
+                                                        <Trash2 size={16} />
+                                                    </button>
+                                                )}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
+                        </tbody>
+                    </table>
+                </div>
             </div>
 
             {/* Modal */}

@@ -448,7 +448,7 @@ const ProjectList: React.FC = () => {
                 <X size={20} />
               </button>
             </div>
-            <div className="p-6 space-y-4">
+            <div className="p-6 space-y-4 max-h-[60vh] overflow-y-auto">
               <div>
                 <label className="block text-sm font-semibold mb-1.5">Client Name</label>
                 <input
@@ -600,7 +600,13 @@ const ProjectList: React.FC = () => {
                 </div>
               </div>
             </div>
-            <div className="p-6 bg-slate-50 dark:bg-zinc-800/50 flex justify-end">
+            <div className="p-6 bg-slate-50 dark:bg-zinc-800/50 flex justify-end gap-3">
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-6 py-2.5 bg-slate-100 dark:bg-zinc-800 text-slate-700 dark:text-zinc-300 rounded-xl font-medium hover:bg-slate-200 dark:hover:bg-zinc-700 transition-colors"
+              >
+                Cancel
+              </button>
               <button
                 onClick={handleSave}
                 disabled={saving}
@@ -612,8 +618,9 @@ const ProjectList: React.FC = () => {
             </div>
           </div>
         </div>
-      )}
-    </div>
+      )
+      }
+    </div >
   );
 };
 

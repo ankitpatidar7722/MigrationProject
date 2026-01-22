@@ -22,7 +22,9 @@ import {
   Table,
   Server,
   Shield,
-  Code
+  Code,
+  Menu,
+  X
 } from 'lucide-react';
 
 import Dashboard from './pages/Dashboard';
@@ -136,6 +138,7 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const [moduleGroups, setModuleGroups] = useState<Record<string, ModuleMaster[]>>({});
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   // Theme state is now managed by ThemeContext, but AppContext might still be consumed by legacy
   // For safety, we keep toggles here as aliases or remove if safe. 
@@ -161,67 +164,84 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (
     <AppContext.Provider value={{ isDarkMode: theme.mode === 'dark', toggleTheme: () => { } }}>
       <div className="flex h-screen overflow-hidden bg-[#f0f2f5] dark:bg-[#050505]">
-        <LoadingOverlay isVisible={false} message="Initializing Application..." /> {/* Initial load simulation if needed, effectively controlled by state */}
+        <LoadingOverlay isVisible={false} message="Initializing Application..." />
+        
+        {/* Mobile Backdrop */}
+        <div 
+          className={`backdrop ${isSidebarOpen ? 'show' : ''} md:hidden`}
+          onClick={() => setIsSidebarOpen(false)}
+        />
         {/* Sidebar */}
         <aside
-          className={`fixed inset-y-0 left-0 z-50 w-20 text-white transition-all duration-300 ease-in-out flex flex-col shadow-xl`}
+          className={`fixed inset-y-0 left-0 z-50 text-white transition-all duration-300 ease-in-out flex flex-col shadow-xl
+            ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'} md:translate-x-0
+            w-64 md:w-20`}
           style={{ backgroundColor: theme.sidebarColor }}
         >
-          <div className="h-16 flex items-center justify-center border-b border-white/10 shrink-0">
-            <div className="w-8 h-8 rounded bg-white/20 flex items-center justify-center font-bold text-white transition-transform hover:scale-110 cursor-pointer" title="MigraTrack">
-              M
+          <div className="h-16 flex items-center justify-between px-4 md:justify-center border-b border-white/10 shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded bg-white/20 flex items-center justify-center font-bold text-white transition-transform hover:scale-110 cursor-pointer" title="MigraTrack">
+                M
+              </div>
+              <span className="font-bold text-lg md:hidden">MigraTrack</span>
             </div>
+            <button
+              onClick={() => setIsSidebarOpen(false)}
+              className="md:hidden p-2 hover:bg-white/10 rounded-lg transition-colors"
+            >
+              <X size={20} />
+            </button>
           </div>
 
-          <nav className="flex-1 overflow-y-auto py-4 space-y-2 notion-scrollbar flex flex-col items-center">
-            <Link to="/" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive('/') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+          <nav className="flex-1 overflow-y-auto py-4 space-y-2 notion-scrollbar flex flex-col md:items-center">
+            <Link to="/" onClick={() => setIsSidebarOpen(false)} className={`flex md:flex-col items-center md:justify-center gap-3 md:gap-0 w-full md:w-16 px-4 md:px-0 py-2 rounded-lg transition-colors group/item ${isActive('/') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
               <LayoutDashboard size={20} />
-              <span className="text-[10px] mt-1 font-medium">{t('Dashboard')}</span>
+              <span className="text-sm md:text-[10px] md:mt-1 font-medium">{t('Dashboard')}</span>
             </Link>
 
-            <Link to="/projects" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${location.pathname.startsWith('/projects') && !projectId ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+            <Link to="/projects" onClick={() => setIsSidebarOpen(false)} className={`flex md:flex-col items-center md:justify-center gap-3 md:gap-0 w-full md:w-16 px-4 md:px-0 py-2 rounded-lg transition-colors group/item ${location.pathname.startsWith('/projects') && !projectId ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
               <Users size={20} />
-              <span className="text-[10px] mt-1 font-medium">{t('Projects')}</span>
+              <span className="text-sm md:text-[10px] md:mt-1 font-medium">{t('Projects')}</span>
             </Link>
 
-            <Link to="/quick-work" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive('/quick-work') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+            <Link to="/quick-work" onClick={() => setIsSidebarOpen(false)} className={`flex md:flex-col items-center md:justify-center gap-3 md:gap-0 w-full md:w-16 px-4 md:px-0 py-2 rounded-lg transition-colors group/item ${isActive('/quick-work') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
               <Code size={20} />
-              <span className="text-[10px] mt-1 font-medium text-center leading-tight">Quick Work</span>
+              <span className="text-sm md:text-[10px] md:mt-1 font-medium text-center leading-tight">Quick Work</span>
             </Link>
 
             {/* Admin Only Link */}
             {user?.role === 'Admin' && (
-              <Link to="/admin/manage-users" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive('/admin/manage-users') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+              <Link to="/admin/manage-users" onClick={() => setIsSidebarOpen(false)} className={`flex md:flex-col items-center md:justify-center gap-3 md:gap-0 w-full md:w-16 px-4 md:px-0 py-2 rounded-lg transition-colors group/item ${isActive('/admin/manage-users') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
                 <Shield size={20} />
-                <span className="text-[10px] mt-1 font-medium relative text-center leading-tight">{t('Users')}</span>
+                <span className="text-sm md:text-[10px] md:mt-1 font-medium relative text-center leading-tight">{t('Users')}</span>
               </Link>
             )}
 
             {(user?.role === 'Admin' || hasPermission('Fields', 'View')) && !HIDDEN_MODULES.includes('Fields') && (
-              <Link to="/admin/fields" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive('/admin/fields') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+              <Link to="/admin/fields" onClick={() => setIsSidebarOpen(false)} className={`flex md:flex-col items-center md:justify-center gap-3 md:gap-0 w-full md:w-16 px-4 md:px-0 py-2 rounded-lg transition-colors group/item ${isActive('/admin/fields') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
                 <Settings size={20} />
-                <span className="text-[10px] mt-1 font-medium">{t('Fields')}</span>
+                <span className="text-sm md:text-[10px] md:mt-1 font-medium">{t('Fields')}</span>
               </Link>
             )}
 
             {(user?.role === 'Admin' || hasPermission('Module Master', 'View')) && (
-              <Link to="/admin/modules" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive('/admin/modules') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+              <Link to="/admin/modules" onClick={() => setIsSidebarOpen(false)} className={`flex md:flex-col items-center md:justify-center gap-3 md:gap-0 w-full md:w-16 px-4 md:px-0 py-2 rounded-lg transition-colors group/item ${isActive('/admin/modules') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
                 <Database size={20} />
-                <span className="text-[10px] mt-1 font-medium">{t('Modules')}</span>
+                <span className="text-sm md:text-[10px] md:mt-1 font-medium">{t('Modules')}</span>
               </Link>
             )}
 
             {(user?.role === 'Admin' || hasPermission('Tables', 'View')) && (
-              <Link to="/admin/webtables" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive('/admin/webtables') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+              <Link to="/admin/webtables" onClick={() => setIsSidebarOpen(false)} className={`flex md:flex-col items-center md:justify-center gap-3 md:gap-0 w-full md:w-16 px-4 md:px-0 py-2 rounded-lg transition-colors group/item ${isActive('/admin/webtables') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
                 <Table size={20} />
-                <span className="text-[10px] mt-1 font-medium">{t('Tables')}</span>
+                <span className="text-sm md:text-[10px] md:mt-1 font-medium">{t('Tables')}</span>
               </Link>
             )}
 
             {(user?.role === 'Admin' || hasPermission('Database', 'View')) && (
-              <Link to="/admin/databases" className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive('/admin/databases') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+              <Link to="/admin/databases" onClick={() => setIsSidebarOpen(false)} className={`flex md:flex-col items-center md:justify-center gap-3 md:gap-0 w-full md:w-16 px-4 md:px-0 py-2 rounded-lg transition-colors group/item ${isActive('/admin/databases') ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
                 <Server size={20} />
-                <span className="text-[10px] mt-1 font-medium">{t('Databases')}</span>
+                <span className="text-sm md:text-[10px] md:mt-1 font-medium">{t('Databases')}</span>
               </Link>
             )}
 
@@ -229,18 +249,18 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
 
             {projectId && (
               <>
-                <div className="w-12 border-t border-white/10 my-1" />
-                <Link to={`/projects/${projectId}`} className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive(`/projects/${projectId}`) ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+                <div className="w-12 md:w-12 border-t border-white/10 my-1 mx-4 md:mx-0" />
+                <Link to={`/projects/${projectId}`} onClick={() => setIsSidebarOpen(false)} className={`flex md:flex-col items-center md:justify-center gap-3 md:gap-0 w-full md:w-16 px-4 md:px-0 py-2 rounded-lg transition-colors group/item ${isActive(`/projects/${projectId}`) ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
                   <Folder size={20} />
-                  <span className="text-[10px] mt-1 font-medium">{t('Overview')}</span>
+                  <span className="text-sm md:text-[10px] md:mt-1 font-medium">{t('Overview')}</span>
                 </Link>
-                <Link to={`/projects/${projectId}/customization`} className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive(`/projects/${projectId}/customization`) ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+                <Link to={`/projects/${projectId}/customization`} onClick={() => setIsSidebarOpen(false)} className={`flex md:flex-col items-center md:justify-center gap-3 md:gap-0 w-full md:w-16 px-4 md:px-0 py-2 rounded-lg transition-colors group/item ${isActive(`/projects/${projectId}/customization`) ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
                   <Plus size={20} />
-                  <span className="text-[10px] mt-1 font-medium">{t('Custom')}</span>
+                  <span className="text-sm md:text-[10px] md:mt-1 font-medium">{t('Custom')}</span>
                 </Link>
-                <Link to={`/projects/${projectId}/issues`} className={`flex flex-col items-center justify-center w-16 py-2 rounded-lg transition-colors group/item ${isActive(`/projects/${projectId}/issues`) ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
+                <Link to={`/projects/${projectId}/issues`} onClick={() => setIsSidebarOpen(false)} className={`flex md:flex-col items-center md:justify-center gap-3 md:gap-0 w-full md:w-16 px-4 md:px-0 py-2 rounded-lg transition-colors group/item ${isActive(`/projects/${projectId}/issues`) ? 'bg-white/20 text-white' : 'text-white/70 hover:bg-white/10 hover:text-white'}`}>
                   <AlertTriangle size={20} />
-                  <span className="text-[10px] mt-1 font-medium">{t('Issues')}</span>
+                  <span className="text-sm md:text-[10px] md:mt-1 font-medium">{t('Issues')}</span>
                 </Link>
               </>
             )}
@@ -248,30 +268,41 @@ const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
           </nav>
         </aside>
 
-        <main className="flex-1 flex flex-col min-w-0 overflow-hidden ml-20">
-          <header className={`h-14 flex items-center justify-between px-6 bg-[#0f294d] text-white shadow-md z-40 sticky top-0`} style={{ backgroundColor: theme.sidebarColor }}>
-            <div className="flex items-center gap-4">
+        <main className="flex-1 flex flex-col min-w-0 overflow-hidden md:ml-20">
+          <header className={`h-14 flex items-center justify-between px-4 md:px-6 bg-[#0f294d] text-white shadow-md z-40 sticky top-0`} style={{ backgroundColor: theme.sidebarColor }}>
+            <div className="flex items-center gap-2 md:gap-4 flex-1 min-w-0">
+              <button
+                onClick={() => setIsSidebarOpen(true)}
+                className="md:hidden p-2 hover:bg-white/10 rounded-lg transition-colors flex-shrink-0"
+                aria-label="Open menu"
+              >
+                <Menu size={20} />
+              </button>
               <Breadcrumb />
             </div>
-            <div className="flex items-center gap-3">
-              <LanguageToggle />
-              <ThemeToggle />
+            <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
+              <div className="hidden sm:flex items-center gap-2">
+                <LanguageToggle />
+                <ThemeToggle />
+              </div>
 
               <Link
                 to="/emails"
-                className="p-2 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition-all"
+                className="hidden sm:flex p-2 rounded-full hover:bg-white/10 text-slate-300 hover:text-white transition-all"
                 title={t('Email')}
               >
                 <Mail size={20} />
               </Link>
 
-              <div className="h-6 w-px bg-white/20 mx-1"></div>
+              <div className="hidden sm:block h-6 w-px bg-white/20 mx-1"></div>
 
-              <RefreshButton />
+              <div className="hidden sm:block">
+                <RefreshButton />
+              </div>
               <UserProfileDropdown />
             </div>
           </header>
-          <div className="flex-1 overflow-y-auto p-6 bg-[#f0f2f5] dark:bg-[#050505] notion-scrollbar">
+          <div className="flex-1 overflow-y-auto p-4 md:p-6 bg-[#f0f2f5] dark:bg-[#050505] notion-scrollbar">
             <div className="max-w-7xl mx-auto">{children}</div>
           </div>
         </main>
